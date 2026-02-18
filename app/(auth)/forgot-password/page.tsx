@@ -59,14 +59,19 @@ export default function ForgotPasswordPage() {
                         </div>
                     ) : (
                         <form onSubmit={handleResetPassword} className="space-y-4">
-                            <Input
-                                type="email"
-                                label="E-mail"
-                                placeholder="seu@email.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
+                            <div className="space-y-2">
+                                <label htmlFor="email" className="text-sm font-medium text-gray-700">
+                                    E-mail
+                                </label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="seu@email.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
 
                             {error && (
                                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
