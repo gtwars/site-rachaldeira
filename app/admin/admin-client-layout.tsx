@@ -5,25 +5,35 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Users, CalendarDays, Trophy, PiggyBank, Home, LayoutDashboard, Shuffle, Image as ImageIcon, Menu, X } from 'lucide-react';
 
-interface NavItem {
-    href: string;
-    label: string;
-    icon: any;
-}
-
 interface AdminClientLayoutProps {
     children: React.ReactNode;
-    navItems: NavItem[];
     role: string;
 }
 
 export default function AdminClientLayout({
     children,
-    navItems,
     role
 }: AdminClientLayoutProps) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const pathname = usePathname();
+
+    // Menu logic moved here to avoid serialization errors
+    const allNavItems = [
+        { href: '/admin', label: 'Painel', icon: LayoutDashboard },
+        { href: '/admin/integrantes', label: 'Integrantes', icon: Users },
+        { href: '/admin/rachas', label: 'Rachas', icon: CalendarDays },
+        { href: '/admin/campeonatos', label: 'Campeonatos', icon: Trophy },
+        { href: '/admin/galeria', label: 'Galeria', icon: ImageIcon },
+        { href: '/admin/financeiro', label: 'Financeiro', icon: PiggyBank },
+        { href: '/admin/sorteio', label: 'Sorteio', icon: Shuffle },
+    ];
+
+    const navItems = allNavItems.filter(item => {
+        if (role === 'director' && item.href === '/admin/financeiro') {
+            return false;
+        }
+        return true;
+    });
 
     // Close sidebar on navigation (mobile)
     useEffect(() => {
