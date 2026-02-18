@@ -47,7 +47,7 @@ export default function RankingTable({ players }: RankingTableProps) {
             </CardHeader>
             <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                    <Table>
+                    <Table className="min-w-[800px]">
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-12">Pos</TableHead>

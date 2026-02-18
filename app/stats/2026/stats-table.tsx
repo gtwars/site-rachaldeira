@@ -80,7 +80,7 @@ export default function StatsTable({ stats, year }: StatsTableProps) {
             </CardHeader>
             <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                    <Table>
+                    <Table className="min-w-[800px]">
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Jogador</TableHead>

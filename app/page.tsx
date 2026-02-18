@@ -89,7 +89,7 @@ export default async function Home() {
                     src="/hero-bg.png"
                     alt="Rachaldeira Hero Background"
                     fill
-                    className="object-cover z-0"
+                    className="object-cover z-0 object-[center_25%]"
                     priority
                     sizes="100vw"
                 />
@@ -130,8 +130,8 @@ export default async function Home() {
                             <p className="text-blue-200 text-sm">Os melhores da última partida realizada</p>
                         </CardHeader>
                         <CardContent className="relative z-10 pt-4 pb-6 px-0 md:px-6">
-                            <div className="overflow-x-auto rounded-lg border border-white/10">
-                                <Table>
+                            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                                <Table className="min-w-[700px] sm:min-w-full">
                                     <TableHeader className="bg-blue-950/50">
                                         <TableRow className="hover:bg-transparent border-white/10">
                                             <TableHead className="text-center font-bold text-white h-12 text-lg w-1/4">
