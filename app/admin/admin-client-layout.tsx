@@ -25,6 +25,7 @@ export default function AdminClientLayout({
         { href: '/admin/campeonatos', label: 'Campeonatos', icon: Trophy },
         { href: '/admin/galeria', label: 'Galeria', icon: ImageIcon },
         { href: '/admin/financeiro', label: 'Financeiro', icon: PiggyBank },
+        { href: '/admin/usuarios', label: 'Usuários', icon: Users },
         { href: '/admin/sorteio', label: 'Sorteio', icon: Shuffle },
     ];
 

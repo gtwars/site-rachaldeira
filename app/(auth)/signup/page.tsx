@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import NextImage from 'next/image';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { signUpAction } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -46,51 +46,20 @@ export default function SignupPage() {
         setLoading(true);
 
         try {
-            const supabase = createClient();
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('email', email);
+            formData.append('password', password);
+            formData.append('position', position);
+            formData.append('age', age);
+            formData.append('cpf', cpf);
+            formData.append('phone', phone);
 
-            // 1. Create auth user
-            const { data: authData, error: signUpError } = await supabase.auth.signUp({
-                email,
-                password,
-            });
+            const result = await signUpAction(formData);
 
-            if (signUpError) throw signUpError;
-
-            if (authData.user) {
-                // 2. Create member
-                const { data: memberData, error: memberError } = await supabase
-                    .from('members')
-                    .insert({
-                        name,
-                        email,
-                        age: parseInt(age) || 0,
-                        cpf,
-                        phone,
-                        position,
-                        photo_url: null
-                    })
-                    .select()
-                    .single();
-
-                if (memberError) {
-                    console.error('Error creating member:', memberError);
-                    throw new Error('Erro ao criar registro de membro. ' + memberError.message);
-                }
-
-                // 3. Create/Link profile
-                const { error: profileError } = await supabase
-                    .from('profiles')
-                    .insert({
-                        id: authData.user.id,
-                        role: 'user',
-                        member_id: memberData.id
-                    });
-
-                if (profileError) {
-                    console.error('Error creating profile:', profileError);
-                    throw new Error('Erro ao criar perfil. ' + profileError.message);
-                }
-
+            if (result.error) {
+                setError(result.error);
+            } else {
                 router.push('/login');
             }
         } catch (err: any) {
