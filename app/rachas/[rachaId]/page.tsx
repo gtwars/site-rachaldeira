@@ -271,8 +271,53 @@ export default async function RachaDetalhesPage({ params }: { params: Promise<{ 
                     </Card>
                 </div>
 
-                {/* Scouts (só se fechado) */}
-                {/* Scouts removidos */}
+                {/* Scouts (só se fechado e com dados) */}
+                {racha.status === 'closed' && scouts.length > 0 && (
+                    <Card className="mb-6">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Activity className="text-blue-600" /> Scouts da Partida
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Jogador</TableHead>
+                                            <TableHead className="text-center">Gols</TableHead>
+                                            <TableHead className="text-center">Assists</TableHead>
+                                            <TableHead className="text-center">Defesas</TableHead>
+                                            <TableHead className="text-center">Cartões</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {scouts.map((scout) => (
+                                            <TableRow key={scout.id}>
+                                                <TableCell className="font-medium">
+                                                    {scout.members?.name || 'Desconhecido'}
+                                                    {scout.members?.position && (
+                                                        <span className="text-xs text-gray-500 ml-1">({scout.members.position})</span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-center font-bold text-gray-900">{scout.goals}</TableCell>
+                                                <TableCell className="text-center text-gray-600">{scout.assists}</TableCell>
+                                                <TableCell className="text-center text-gray-600">{scout.difficult_saves}</TableCell>
+                                                <TableCell className="text-center">
+                                                    {scout.warnings > 0 && (
+                                                        <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-bold">
+                                                            {scout.warnings} 🟨
+                                                        </span>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
         </main>
     );
