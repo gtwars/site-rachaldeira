@@ -16,6 +16,15 @@ const poppins = Poppins({
 export const metadata: Metadata = {
     title: "Rachaldeira",
     description: "Sistema completo para gestão do racha de futebol Rachaldeira",
+    icons: {
+        icon: '/logo.png',
+        shortcut: '/logo-new.png',
+        apple: '/logo.png',
+        other: {
+            rel: 'apple-touch-icon-precomposed',
+            url: '/logo.png',
+        },
+    },
 };
 
 export default async function RootLayout({
