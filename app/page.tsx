@@ -15,11 +15,11 @@ import {
 } from "@/components/ui/table";
 
 export default async function Home() {
-    let members = [];
-    let lastRacha = null;
-    let rachas = [];
-    let campeonatos = [];
-    let weeklyHighlights = null;
+    let members: any[] = [];
+    let lastRacha: any = null;
+    let rachas: any[] = [];
+    let campeonatos: any[] = [];
+    let weeklyHighlights: any = null;
 
     try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

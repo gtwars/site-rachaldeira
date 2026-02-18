@@ -23,9 +23,9 @@ export default async function RootLayout({
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    let user = null;
-    let profile = null;
-    let memberData = null;
+    let user: any = null;
+    let profile: any = null;
+    let memberData: any = null;
 
     try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
