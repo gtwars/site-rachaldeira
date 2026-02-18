@@ -62,7 +62,7 @@ export default async function RootLayout({
     return (
         <html lang="pt-BR">
             <body className={`${poppins.className} antialiased flex flex-col min-h-screen`}>
-                {user && <Navbar user={user} profile={profile} member={memberData} />}
+                <Navbar user={user} profile={profile} member={memberData} />
                 <div className="flex-1">
                     {children}
                 </div>
