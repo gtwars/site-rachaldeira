@@ -255,21 +255,21 @@ export default function ScoutsPage({ params }: { params: Promise<{ rachaId: stri
     return (
         <main className="min-h-screen bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 py-8">
-                <div className="flex justify-between items-start mb-8">
+                <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4">
                     <div>
-                        <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
                             ⚡ Scouts ao Vivo
                         </h1>
                         <p className="text-gray-600">
                             {racha.location} - {new Date(racha.date_time).toLocaleString('pt-BR')}
                         </p>
                         <p className="text-sm text-gray-500 mt-1">
-                            Status: <span className="font-semibold">{racha.status}</span>
+                            Status: <span className="font-semibold">{racha.status === 'open' ? 'Aberto' : racha.status === 'locked' ? 'Travado' : racha.status === 'in_progress' ? 'Em andamento' : 'Fechado'}</span>
                         </p>
                     </div>
 
-                    <div className="flex gap-2">
-                        {racha.status === 'locked' && (
+                    <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                        {(racha.status === 'open' || racha.status === 'locked') && (
                             <Button onClick={handleStartRacha}>
                                 <Play size={16} className="mr-2" />
                                 Iniciar Racha

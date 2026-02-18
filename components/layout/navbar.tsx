@@ -107,7 +107,7 @@ export function Navbar({ user, profile, member }: NavbarProps) {
                                                 {member?.name || user.email?.split('@')[0]}
                                             </span>
                                         </div>
-                                        <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-blue-400 group-hover:border-white transition-colors">
+                                        <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-blue-400 group-hover:border-white transition-colors">
                                             {member?.photo_url ? (
                                                 <NextImage
                                                     src={member.photo_url}

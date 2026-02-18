@@ -6,9 +6,9 @@ export default function Footer() {
     return (
         <footer className="bg-gray-900 text-gray-300 mt-auto">
             <div className="max-w-7xl mx-auto px-4 py-12">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
                     {/* Logo e Descrição */}
-                    <div className="col-span-1 flex flex-col items-start gap-4">
+                    <div className="col-span-1 flex flex-col items-center md:items-start gap-4">
                         <NextImage
                             src="https://pqroxmeyuicutatbessb.supabase.co/storage/v1/object/public/Fotos/logo%20rachaldeira.png"
                             alt="Rachaldeira Logo"
@@ -64,7 +64,7 @@ export default function Footer() {
                             href="https://instagram.com/rachaldeira"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm hover:text-white transition-colors"
+                            className="flex items-center justify-center md:justify-start gap-2 text-sm hover:text-white transition-colors"
                         >
                             <Instagram size={18} />
                             @rachaldeira
@@ -75,7 +75,7 @@ export default function Footer() {
                     <div>
                         <h4 className="text-white font-semibold mb-4">Endereço</h4>
                         <div className="space-y-2 text-sm">
-                            <div className="flex items-start gap-2">
+                            <div className="flex items-start justify-center md:justify-start gap-2">
                                 <MapPin size={18} className="flex-shrink-0 mt-0.5" />
                                 <span>R. Sylvio Lagreca, 08 - Parque Ipe,<br />São Paulo - SP, 05571-010</span>
                             </div>

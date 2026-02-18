@@ -89,7 +89,7 @@ export default async function Home() {
                     src="/hero-bg.png"
                     alt="Rachaldeira Hero Background"
                     fill
-                    className="object-cover z-0 object-[center_25%]"
+                    className="object-cover z-0 object-top md:object-[center_25%]"
                     priority
                     sizes="100vw"
                 />
@@ -130,7 +130,59 @@ export default async function Home() {
                             <p className="text-blue-200 text-sm">Os melhores da última partida realizada</p>
                         </CardHeader>
                         <CardContent className="relative z-10 pt-4 pb-6 px-0 md:px-6">
-                            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                            {/* Mobile View - Cards Grid */}
+                            <div className="grid grid-cols-2 gap-3 md:hidden">
+                                {/* Top 1 */}
+                                <div className="bg-white/10 rounded-lg p-3 text-center border border-white/10">
+                                    <div className="text-2xl mb-1">👑</div>
+                                    <div className="font-bold text-yellow-300 text-sm uppercase mb-1">Craque</div>
+                                    <div className="font-bold text-white text-lg leading-tight truncate">
+                                        {weeklyHighlights.top1?.name || '-'}
+                                    </div>
+                                    {weeklyHighlights.top1?.position && (
+                                        <div className="text-[10px] text-yellow-200/70 uppercase mt-1">{weeklyHighlights.top1.position}</div>
+                                    )}
+                                </div>
+
+                                {/* Top 2 */}
+                                <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                                    <div className="text-2xl mb-1">🥈</div>
+                                    <div className="font-bold text-gray-300 text-sm uppercase mb-1">Top 2</div>
+                                    <div className="font-bold text-gray-100 text-lg leading-tight truncate">
+                                        {weeklyHighlights.top2?.name || '-'}
+                                    </div>
+                                    {weeklyHighlights.top2?.position && (
+                                        <div className="text-[10px] text-gray-400 uppercase mt-1">{weeklyHighlights.top2.position}</div>
+                                    )}
+                                </div>
+
+                                {/* Top 3 */}
+                                <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                                    <div className="text-2xl mb-1">🥉</div>
+                                    <div className="font-bold text-orange-300 text-sm uppercase mb-1">Top 3</div>
+                                    <div className="font-bold text-orange-50 text-lg leading-tight truncate">
+                                        {weeklyHighlights.top3?.name || '-'}
+                                    </div>
+                                    {weeklyHighlights.top3?.position && (
+                                        <div className="text-[10px] text-orange-200/50 uppercase mt-1">{weeklyHighlights.top3.position}</div>
+                                    )}
+                                </div>
+
+                                {/* Sheriff */}
+                                <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                                    <div className="text-2xl mb-1">👮</div>
+                                    <div className="font-bold text-blue-300 text-sm uppercase mb-1">Xerife</div>
+                                    <div className="font-bold text-blue-50 text-lg leading-tight truncate">
+                                        {weeklyHighlights.sheriff?.name || '-'}
+                                    </div>
+                                    {weeklyHighlights.sheriff?.position && (
+                                        <div className="text-[10px] text-blue-200/50 uppercase mt-1">{weeklyHighlights.sheriff.position}</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Desktop View - Table */}
+                            <div className="hidden md:block overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
                                 <Table className="min-w-[700px] sm:min-w-full">
                                     <TableHeader className="bg-blue-950/50">
                                         <TableRow className="hover:bg-transparent border-white/10">
