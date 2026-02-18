@@ -58,13 +58,14 @@ export default async function RachasPage() {
                                                             <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-600">
                                                                 <span className="flex items-center gap-1">
                                                                     <CalendarDays size={16} />
-                                                                    {new Date(racha.date_time).toLocaleDateString('pt-BR')}
+                                                                    {new Date(racha.date_time).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                                                                 </span>
                                                                 <span className="flex items-center gap-1">
                                                                     <Clock size={16} />
                                                                     {new Date(racha.date_time).toLocaleTimeString('pt-BR', {
                                                                         hour: '2-digit',
-                                                                        minute: '2-digit'
+                                                                        minute: '2-digit',
+                                                                        timeZone: 'America/Sao_Paulo'
                                                                     })}
                                                                 </span>
                                                             </div>
@@ -125,10 +126,11 @@ export default async function RachasPage() {
                                                 <div>
                                                     <p className="font-semibold text-gray-900">{racha.location}</p>
                                                     <p className="text-sm text-gray-600">
-                                                        {new Date(racha.date_time).toLocaleDateString('pt-BR')} às {' '}
+                                                        {new Date(racha.date_time).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })} às {' '}
                                                         {new Date(racha.date_time).toLocaleTimeString('pt-BR', {
                                                             hour: '2-digit',
-                                                            minute: '2-digit'
+                                                            minute: '2-digit',
+                                                            timeZone: 'America/Sao_Paulo'
                                                         })}
                                                     </p>
                                                 </div>

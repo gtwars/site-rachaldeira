@@ -29,7 +29,7 @@ export default async function RachaDetalhesPage({ params }: { params: Promise<{ 
             .select('role, member_id')
             .eq('id', user.id)
             .single();
-        isAdmin = profile?.role === 'admin';
+        isAdmin = profile?.role === 'admin' || profile?.role === 'director';
         userMemberId = profile?.member_id || null;
     }
 
@@ -129,7 +129,8 @@ export default async function RachaDetalhesPage({ params }: { params: Promise<{ 
                                 weekday: 'long',
                                 year: 'numeric',
                                 month: 'long',
-                                day: 'numeric'
+                                day: 'numeric',
+                                timeZone: 'America/Sao_Paulo'
                             })}</span>
                         </div>
                         <div className="flex items-center gap-3 text-gray-700">
@@ -137,7 +138,8 @@ export default async function RachaDetalhesPage({ params }: { params: Promise<{ 
                             <span className="font-semibold">Horário:</span>
                             <span>{new Date(racha.date_time).toLocaleTimeString('pt-BR', {
                                 hour: '2-digit',
-                                minute: '2-digit'
+                                minute: '2-digit',
+                                timeZone: 'America/Sao_Paulo'
                             })}</span>
                         </div>
                         <div className="flex items-center gap-3 text-gray-700">

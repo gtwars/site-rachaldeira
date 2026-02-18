@@ -51,7 +51,7 @@ export default async function Home() {
                 const sheriff = members.find(m => m.id === lastRacha.sheriff_id);
 
                 weeklyHighlights = {
-                    rachaLabel: new Date(lastRacha.date_time).toLocaleDateString('pt-BR'),
+                    rachaLabel: new Date(lastRacha.date_time).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
                     top1,
                     top2,
                     top3,
@@ -354,7 +354,7 @@ export default async function Home() {
                                                         </p>
                                                         <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
                                                             <CalendarDays size={14} />
-                                                            {new Date(racha.date_time).toLocaleString('pt-BR')}
+                                                            {new Date(racha.date_time).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                                                         </p>
                                                     </div>
                                                     <span className={`px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-wide ${racha.status === 'open' ? 'bg-green-100 text-green-700' :
@@ -410,7 +410,7 @@ export default async function Home() {
                                                             </p>
                                                         </div>
                                                         <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
-                                                            {new Date(camp.start_date).toLocaleDateString('pt-BR')}
+                                                            {new Date(camp.start_date).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                                                         </span>
                                                     </div>
                                                 </CardContent>
