@@ -14,8 +14,29 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-    title: "Rachaldeira",
-    description: "Sistema completo para gestão do racha de futebol Rachaldeira",
+    title: "Rachaldeira - Racha, Futebol e Dindo",
+    description: "Site para a gestão do nosso racha",
+    openGraph: {
+        title: "Rachaldeira - Racha, Futebol e Dindo",
+        description: "Site para a gestão do nosso racha",
+        url: 'https://site-rachaldeira.vercel.app',
+        siteName: 'Rachaldeira',
+        images: [
+            {
+                url: '/logo.png', // Assuming logo.png is good for OG, or maybe hero-bg.png looks better? usually logo is fine if square, but landscape is better. Let's stick to logo for now or add a specific og-image if available.
+                width: 800,
+                height: 600,
+            },
+        ],
+        locale: 'pt_BR',
+        type: 'website',
+    },
+    twitter: {
+        card: 'summary',
+        title: "Rachaldeira - Racha, Futebol e Dindo",
+        description: "Site para a gestão do nosso racha",
+        images: ['/logo.png'],
+    },
     icons: {
         icon: '/logo.png',
         shortcut: '/logo-new.png',
