@@ -155,12 +155,12 @@ export default function AdminCampeonatosPage() {
     return (
         <main className="min-h-screen bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 py-8">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-4xl font-bold text-gray-900 flex items-center gap-3">
-                        <Trophy className="text-yellow-600" />
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 flex items-center gap-2">
+                        <Trophy className="text-yellow-600 shrink-0" />
                         Gerenciar Campeonatos
                     </h1>
-                    <Button onClick={() => handleOpenModal()}>
+                    <Button onClick={() => handleOpenModal()} className="w-full md:w-auto">
                         <Plus size={20} className="mr-2" />
                         Novo Campeonato
                     </Button>
@@ -168,65 +168,69 @@ export default function AdminCampeonatosPage() {
 
                 <Card>
                     <CardContent className="p-0">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Nome</TableHead>
-                                    <TableHead>Data de Início</TableHead>
-                                    <TableHead>Local</TableHead>
-                                    <TableHead>Formato</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Ações</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {championships.map((championship) => (
-                                    <TableRow key={championship.id}>
-                                        <TableCell className="font-medium">{championship.name}</TableCell>
-                                        <TableCell>{new Date(championship.start_date).toLocaleDateString('pt-BR')}</TableCell>
-                                        <TableCell>{championship.location}</TableCell>
-                                        <TableCell>
-                                            {championship.format === 'round_robin' ? '🔄 Pontos Corridos' : '🏅 Chaveamento'}
-                                            {championship.format === 'round_robin' && (
-                                                <span className="text-xs text-gray-500 ml-2">({championship.rounds} turno{championship.rounds > 1 ? 's' : ''})</span>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className={`px-2 py-1 text-xs rounded ${championship.status === 'not_started' ? 'bg-blue-100 text-blue-800' :
-                                                championship.status === 'in_progress' ? 'bg-green-100 text-green-800' :
-                                                    'bg-gray-100 text-gray-800'
-                                                }`}>
-                                                {championship.status === 'not_started' ? 'Não Iniciado' :
-                                                    championship.status === 'in_progress' ? 'Em Andamento' : 'Finalizado'}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleManage(championship.id)}
-                                            >
-                                                Gerenciar
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleOpenModal(championship)}
-                                            >
-                                                <Pencil size={16} />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleDelete(championship.id)}
-                                            >
-                                                <Trash2 size={16} className="text-red-600" />
-                                            </Button>
-                                        </TableCell>
+                        <div className="overflow-x-auto">
+                            <Table className="min-w-[800px]">
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Nome</TableHead>
+                                        <TableHead>Data de Início</TableHead>
+                                        <TableHead>Local</TableHead>
+                                        <TableHead>Formato</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {championships.map((championship) => (
+                                        <TableRow key={championship.id}>
+                                            <TableCell className="font-medium">{championship.name}</TableCell>
+                                            <TableCell>{new Date(championship.start_date).toLocaleDateString('pt-BR')}</TableCell>
+                                            <TableCell>{championship.location}</TableCell>
+                                            <TableCell>
+                                                {championship.format === 'round_robin' ? '🔄 Pontos Corridos' : '🏅 Chaveamento'}
+                                                {championship.format === 'round_robin' && (
+                                                    <span className="text-xs text-gray-500 ml-2">({championship.rounds} turno{championship.rounds > 1 ? 's' : ''})</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className={`px-2 py-1 text-xs rounded ${championship.status === 'not_started' ? 'bg-blue-100 text-blue-800' :
+                                                    championship.status === 'in_progress' ? 'bg-green-100 text-green-800' :
+                                                        'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                    {championship.status === 'not_started' ? 'Não Iniciado' :
+                                                        championship.status === 'in_progress' ? 'Em Andamento' : 'Finalizado'}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleManage(championship.id)}
+                                                    >
+                                                        Gerenciar
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleOpenModal(championship)}
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleDelete(championship.id)}
+                                                    >
+                                                        <Trash2 size={16} className="text-red-600" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                 </Card>
 
