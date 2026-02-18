@@ -1,0 +1,388 @@
+import Link from 'next/link';
+import NextImage from 'next/image';
+import { createClient } from '@/lib/supabase/server';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { CalendarDays, Trophy, Instagram, Star } from 'lucide-react';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+
+export default async function Home() {
+    const supabase = await createClient();
+
+    // Buscar membros para exibir nomes nos destaques
+    const { data: members } = await supabase
+        .from('members')
+        .select('id, name, position, photo_url');
+
+    // Buscar último racha fechado para destaques semanais
+    const { data: lastRacha } = await supabase
+        .from('rachas')
+        .select('*')
+        .eq('status', 'closed')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+
+    let weeklyHighlights = null;
+    if (lastRacha && members) {
+        const top1 = members.find(m => m.id === lastRacha.top1_id);
+        const top2 = members.find(m => m.id === lastRacha.top2_id);
+        const top3 = members.find(m => m.id === lastRacha.top3_id);
+        const sheriff = members.find(m => m.id === lastRacha.sheriff_id);
+
+        weeklyHighlights = {
+            rachaLabel: new Date(lastRacha.date_time).toLocaleDateString('pt-BR'),
+            top1,
+            top2,
+            top3,
+            sheriff
+        };
+    }
+
+    // Buscar próximos rachas
+    const { data: rachas } = await supabase
+        .from('rachas')
+        .select('*')
+        .gte('date_time', new Date().toISOString())
+        .order('date_time', { ascending: true })
+        .limit(3);
+
+    // Buscar próximos campeonatos
+    const { data: campeonatos } = await supabase
+        .from('championships')
+        .select('*')
+        .in('status', ['not_started', 'in_progress'])
+        .order('start_date', { ascending: true })
+        .limit(3);
+
+    return (
+        <main className="min-h-screen bg-gray-50 flex flex-col">
+            {/* Hero Section */}
+            <div className="relative min-h-[70vh] flex flex-col items-center justify-center text-center text-white p-4 overflow-hidden">
+                <NextImage
+                    src="/hero-bg.png"
+                    alt="Rachaldeira Hero Background"
+                    fill
+                    className="object-cover z-0"
+                    priority
+                    sizes="100vw"
+                />
+
+                {/* Overlay Escuro */}
+                <div className="absolute inset-0 bg-black/50 z-0"></div>
+
+                {/* Conteúdo Hero */}
+                <div className="relative z-10 animate-fade-in-up flex flex-col items-center">
+
+                    <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-md">
+                        Bem-vindo ao Rachaldeira
+                    </h1>
+                    <p className="text-xl md:text-2xl text-gray-100 max-w-2xl mx-auto drop-shadow-sm font-light">
+                        Resenha, amizade e futebol levado a sério.
+                    </p>
+                </div>
+            </div>
+
+            <div className="max-w-7xl mx-auto px-4 py-12 w-full space-y-12">
+
+                {/* Destaques da Semana (Último Racha) - Renderizar somente se houver destaques */}
+                {weeklyHighlights && (
+                    <Card className="mb-0 border-none bg-gradient-to-r from-blue-900 to-blue-800 text-white shadow-xl overflow-hidden relative">
+                        {/* Background pattern */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
+
+                        <CardHeader className="relative z-10 border-b border-blue-700/50 pb-2">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="flex items-center gap-3 text-2xl text-white">
+                                    <Star className="text-yellow-400 fill-yellow-400" />
+                                    Destaques do Último Racha
+                                </CardTitle>
+                                <span className="bg-blue-950/50 px-3 py-1 rounded-full text-sm font-medium border border-blue-700/50">
+                                    {weeklyHighlights.rachaLabel}
+                                </span>
+                            </div>
+                            <p className="text-blue-200 text-sm">Os melhores da última partida realizada</p>
+                        </CardHeader>
+                        <CardContent className="relative z-10 pt-4 pb-6 px-0 md:px-6">
+                            <div className="overflow-x-auto rounded-lg border border-white/10">
+                                <Table>
+                                    <TableHeader className="bg-blue-950/50">
+                                        <TableRow className="hover:bg-transparent border-white/10">
+                                            <TableHead className="text-center font-bold text-white h-12 text-lg w-1/4">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <span>👑</span> Craque
+                                                </div>
+                                            </TableHead>
+                                            <TableHead className="text-center font-bold text-white h-12 text-lg w-1/4">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <span>🥈</span> Top 2
+                                                </div>
+                                            </TableHead>
+                                            <TableHead className="text-center font-bold text-orange-300 h-12 text-lg w-1/4">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <span>🥉</span> Top 3
+                                                </div>
+                                            </TableHead>
+                                            <TableHead className="text-center font-bold text-white h-12 text-lg w-1/4">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <span>👮</span> Xerife
+                                                </div>
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow className="hover:bg-white/5 border-none">
+                                            <TableCell className="text-center py-6">
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-2xl font-black text-white tracking-wide drop-shadow-md">
+                                                        {weeklyHighlights.top1?.name || '-'}
+                                                    </span>
+                                                    {weeklyHighlights.top1?.position && (
+                                                        <span className="text-xs text-yellow-200/70 mt-1 uppercase tracking-wider font-semibold">
+                                                            {weeklyHighlights.top1.position}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center py-6">
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-xl font-bold text-gray-100">
+                                                        {weeklyHighlights.top2?.name || '-'}
+                                                    </span>
+                                                    {weeklyHighlights.top2?.position && (
+                                                        <span className="text-xs text-blue-200/50 mt-1">
+                                                            {weeklyHighlights.top2.position}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center py-6">
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-xl font-bold text-orange-50">
+                                                        {weeklyHighlights.top3?.name || '-'}
+                                                    </span>
+                                                    {weeklyHighlights.top3?.position && (
+                                                        <span className="text-xs text-blue-200/50 mt-1">
+                                                            {weeklyHighlights.top3.position}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center py-6">
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-xl font-bold text-blue-50">
+                                                        {weeklyHighlights.sheriff?.name || '-'}
+                                                    </span>
+                                                    {weeklyHighlights.sheriff?.position && (
+                                                        <span className="text-xs text-blue-200/50 mt-1">
+                                                            {weeklyHighlights.sheriff.position}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </div>
+                            <div className="mt-6 flex justify-center w-full px-4">
+                                <Link href="/rank" className="w-full max-w-4xl">
+                                    <Button className="w-full !bg-[#af1c15] hover:!bg-[#8f1610] text-white font-bold h-12 text-lg shadow-b-4 border-b-4 border-[#8f1610] active:border-0 active:translate-y-1 transition-all">
+                                        Ver Ranking Completo
+                                        <span className="ml-2">🏆</span>
+                                    </Button>
+                                </Link>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+
+
+                {/* História do Grupo */}
+                <section>
+                    <div className="text-center mb-8">
+                        <h2 className="text-3xl font-bold text-gray-800 relative inline-block pb-2 border-b-4 border-[#af1c15]">
+                            Nossa História
+                        </h2>
+                    </div>
+                    <Card className="border-none shadow-md bg-white/80 overflow-hidden">
+                        <CardContent className="p-0">
+                            <div className="grid md:grid-cols-5 gap-0">
+                                {/* Imagem */}
+                                <div className="md:col-span-2 relative min-h-[300px] md:min-h-[500px]">
+                                    <NextImage
+                                        src="https://pqroxmeyuicutatbessb.supabase.co/storage/v1/object/public/Fotos/Foto%20cal%20presida.jpg"
+                                        alt="Cal Presida - Rachaldeira"
+                                        fill
+                                        className="object-cover"
+                                        sizes="(max-width: 768px) 100vw, 40vw"
+                                    />
+                                </div>
+
+                                {/* Texto */}
+                                <div className="md:col-span-3 p-8 md:p-10 flex flex-col justify-center">
+                                    <div className="text-gray-600 leading-relaxed space-y-4 text-base">
+                                        <p>
+                                            No início de 2019, surgiu no coração do Suricato a ideia de organizar um racha no Sport Gaúcho. Mas não era qualquer racha — a proposta era algo diferente: planilha na mão, scouts sendo anotados e, claro, aquela vontade de fazer tudo bem feito. Sabendo das dificuldades para reunir jogadores e manter o controle financeiro, Suricato convidou Cal para ajudar na organização.
+                                        </p>
+                                        <p>
+                                            Tudo corria bem, até que em março de 2020 a pandemia chegou e atrapalhou os planos. O racha foi interrompido. Mas a paixão pelo futebol falou mais alto: em janeiro de 2021, Muca resolveu assumir a responsabilidade de reerguer o projeto ao lado de Cal. Trouxe com ele não só a sua galera, mas também inovação com o app Chega Mais, que além de controlar a presença, registrava os scouts e destacava os melhores jogadores da semana.
+                                        </p>
+                                        <p>
+                                            A turma foi crescendo e o racha ganhando força. No fim de 2021, Muca se despediu do projeto, deixando o comando nas mãos de Caldeira, que seguiu firme.
+                                        </p>
+                                        <blockquote className="border-l-4 border-[#093a9f] pl-5 py-3 my-2 text-[#093a9f]/80 bg-blue-50/50 rounded-r-lg">
+                                            "Queremos um racha organizado, sem brigas, com muita resenha, competição saudável e, acima de tudo, amizade."
+                                        </blockquote>
+                                        <p>
+                                            Desde então, Caldeira reuniu um grupo de pessoas com a mesma mentalidade, que hoje compõem a diretoria do time: Buiu, Diogo, PH, Matheus, Texas, Zirão e Guizao. Juntos, seguimos evoluindo dia após dia, sempre buscando excelência em tudo que fazemos.
+                                        </p>
+                                        <p>
+                                            Não é à toa que já participamos de cinco campeonatos — todos com muita festa, resenha e diversão (menos pro presidente, que segue firme... mas ainda virgem de títulos).
+                                        </p>
+                                        <p className="text-gray-700 mt-2">
+                                            Seja muito bem-vindo ao site do nosso racha. Aqui o futebol é levado a sério, mas a amizade é o que realmente importa.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </section>
+
+
+
+                <div className="grid md:grid-cols-2 gap-8">
+                    {/* Próximos Rachas */}
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                            <CalendarDays className="text-[#093a9f]" />
+                            Próximos Rachas
+                        </h2>
+                        {rachas && rachas.length > 0 ? (
+                            <div className="space-y-4">
+                                {rachas.map((racha) => (
+                                    <Link
+                                        key={racha.id}
+                                        href={racha.is_next ? '/rachas/proximo' : `/rachas/${racha.id}`}
+                                        className="block group"
+                                    >
+                                        <Card className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-l-4 border-l-transparent hover:border-l-[#093a9f]">
+                                            <CardContent className="p-4">
+                                                <div className="flex justify-between items-center">
+                                                    <div>
+                                                        <p className="font-bold text-gray-900 group-hover:text-[#093a9f] transition-colors">
+                                                            {racha.is_next && '🔥 '}{racha.location}
+                                                        </p>
+                                                        <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
+                                                            <CalendarDays size={14} />
+                                                            {new Date(racha.date_time).toLocaleString('pt-BR')}
+                                                        </p>
+                                                    </div>
+                                                    <span className={`px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-wide ${racha.status === 'open' ? 'bg-green-100 text-green-700' :
+                                                        racha.status === 'locked' ? 'bg-yellow-100 text-yellow-700' :
+                                                            'bg-gray-100 text-gray-700'
+                                                        }`}>
+                                                        {racha.status === 'open' ? 'Aberto' :
+                                                            racha.status === 'locked' ? 'Travado' :
+                                                                racha.status === 'in_progress' ? 'Em Jogo' : 'Fechado'}
+                                                    </span>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </Link>
+                                ))}
+                                <Link href="/rachas">
+                                    <Button variant="outline" className="w-full border-dashed group">
+                                        Ver Agenda Completa
+                                        <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                                    </Button>
+                                </Link>
+                            </div>
+                        ) : (
+                            <div className="bg-gray-100 rounded-lg p-6 text-center text-gray-500">
+                                Nenhum racha agendado no momento.
+                            </div>
+                        )}
+                    </section>
+
+                    {/* Campeonatos & Social */}
+                    <div className="space-y-8">
+                        {/* Campeonatos */}
+                        <section>
+                            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                <Trophy className="text-[#af1c15]" />
+                                Campeonatos
+                            </h2>
+                            {campeonatos && campeonatos.length > 0 ? (
+                                <div className="space-y-4">
+                                    {campeonatos.map((camp) => (
+                                        <Link
+                                            key={camp.id}
+                                            href={`/campeonatos/${camp.id}`}
+                                            className="block group"
+                                        >
+                                            <Card className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-l-4 border-l-transparent hover:border-l-[#af1c15]">
+                                                <CardContent className="p-4">
+                                                    <div className="flex justify-between items-center">
+                                                        <div>
+                                                            <p className="font-bold text-gray-900 group-hover:text-[#af1c15] transition-colors">{camp.name}</p>
+                                                            <p className="text-xs text-gray-500 mt-1 uppercase tracking-wider font-semibold">
+                                                                {camp.format === 'round_robin' ? 'Pontos Corridos' : 'Mata-mata'}
+                                                            </p>
+                                                        </div>
+                                                        <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+                                                            {new Date(camp.start_date).toLocaleDateString('pt-BR')}
+                                                        </span>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </Link>
+                                    ))}
+                                    <Link href="/campeonatos">
+                                        <Button variant="outline" className="w-full border-dashed group">
+                                            Ver Classificação
+                                            <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                                        </Button>
+                                    </Link>
+                                </div>
+                            ) : (
+                                <div className="bg-gray-100 rounded-lg p-6 text-center text-gray-500">
+                                    Nenhum campeonato ativo.
+                                </div>
+                            )}
+                        </section>
+
+                        {/* Instagram */}
+                        <section>
+                            <Card className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none shadow-lg">
+                                <CardContent className="p-6 flex flex-col items-center text-center">
+                                    <Instagram size={32} className="mb-3" />
+                                    <h3 className="font-bold text-lg mb-1">Siga o Rachaldeira</h3>
+                                    <p className="text-sm opacity-90 mb-4">Fotos, vídeos e os melhores momentos!</p>
+                                    <a
+                                        href="https://instagram.com/rachaldeira"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-full"
+                                    >
+                                        <Button variant="outline" className="w-full bg-white text-gray-900 hover:bg-gray-50 border-2 border-white font-semibold">
+                                            @rachaldeira
+                                        </Button>
+                                    </a>
+                                </CardContent>
+                            </Card>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </main >
+    );
+}
