@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     openGraph: {
         title: "Rachaldeira - Racha, Futebol e Dindo",
         description: "Site para a gestão do nosso racha",
-        url: 'https://site-rachaldeira.vercel.app',
+        url: process.env.NEXT_PUBLIC_SITE_URL || 'https://site-rachaldeira.vercel.app',
         siteName: 'Rachaldeira',
         images: [
             {
