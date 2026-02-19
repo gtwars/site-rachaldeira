@@ -58,6 +58,13 @@ O sistema Rachaldeira está **quase completo** e **100% funcional** para uso em 
 - ✅ Validação de voto único por período
 - ✅ Interface completa integrada ao ranking
 
+### Financeiro (Admin)
+- ✅ Controle de caixa (Receitas e Despesas)
+- ✅ Gerenciamento de mensalidades
+- ✅ Registro de pagamentos manuais
+- ✅ Modal de pagamento sem recarregar aba
+- ✅ Visualização de status de pagamento (Pago/Pendente)
+
 ### Infraestrutura
 - ✅ 52 arquivos criados (23 páginas, 12 componentes, 17 arquivos de infra)
 - ✅ 12 tabelas no banco com RLS completo

@@ -371,16 +371,18 @@ export default function UserProfilePage() {
                                     </div>
                                 )}
                             </div>
-                            <label className="absolute bottom-0 right-0 bg-[#af1c15] text-white p-2 rounded-full cursor-pointer hover:bg-red-700 transition-colors shadow-md">
-                                <Upload size={16} />
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={handlePhotoUpload}
-                                    disabled={saveStatus === 'saving'}
-                                />
-                            </label>
+                            {isEditing && (
+                                <label className="absolute bottom-0 right-0 bg-[#af1c15] text-white p-2 rounded-full cursor-pointer hover:bg-red-700 transition-colors shadow-md">
+                                    <Upload size={16} />
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handlePhotoUpload}
+                                        disabled={saveStatus === 'saving'}
+                                    />
+                                </label>
+                            )}
                         </div>
 
                         <h2 className="text-xl font-bold text-gray-900">{formData.name || 'Seu Nome'}</h2>

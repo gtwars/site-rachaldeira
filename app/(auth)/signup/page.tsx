@@ -21,6 +21,7 @@ export default function SignupPage() {
     const [age, setAge] = useState('');
     const [cpf, setCpf] = useState('');
     const [phone, setPhone] = useState('');
+    const [photo, setPhoto] = useState<File | null>(null);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -55,6 +56,10 @@ export default function SignupPage() {
             formData.append('cpf', cpf);
             formData.append('phone', phone);
 
+            if (photo) {
+                formData.append('photo', photo);
+            }
+
             const result = await signUpAction(formData);
 
             if (result.error) {
@@ -87,6 +92,17 @@ export default function SignupPage() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSignup} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="photo">Foto de Perfil</Label>
+                            <Input
+                                id="photo"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setPhoto(e.target.files?.[0] || null)}
+                                className="cursor-pointer"
+                            />
+                        </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="name">Nome Completo *</Label>
                             <Input

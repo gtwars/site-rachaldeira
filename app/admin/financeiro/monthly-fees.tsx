@@ -93,7 +93,7 @@ export default function MonthlyFees({ members, transactions }: MonthlyFeesProps)
             console.error(error);
         } else {
             setPaymentModalOpen(false);
-            window.location.reload(); // Refresh to show new status
+            window.location.href = '/admin/financeiro?tab=monthly-fees';
         }
     };
 

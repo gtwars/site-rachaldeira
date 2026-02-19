@@ -11,11 +11,38 @@ export async function signUpAction(formData: FormData) {
     const age = formData.get('age') as string;
     const cpf = formData.get('cpf') as string;
     const phone = formData.get('phone') as string;
+    const photo = formData.get('photo') as File | null;
 
     try {
         const supabase = createAdminClient();
 
         console.log('Creating user:', { email, name });
+
+        // Upload photo if exists
+        let photo_url = null;
+        if (photo && photo.size > 0) {
+            const fileExt = photo.name.split('.').pop();
+            const fileName = `${Date.now()}_${Math.random()}.${fileExt}`;
+            const filePath = `avatars/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('Foto dos Usuarios')
+                .upload(filePath, photo, {
+                    contentType: photo.type,
+                    upsert: true
+                });
+
+            if (uploadError) {
+                console.error('Error uploading photo:', uploadError);
+                // Continue without photo or handle error?
+                // For now, let's log and continue
+            } else {
+                const { data: { publicUrl } } = supabase.storage
+                    .from('Foto dos Usuarios')
+                    .getPublicUrl(filePath);
+                photo_url = publicUrl;
+            }
+        }
 
         // 1. Create auth user with auto-confirm
         const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
@@ -44,7 +71,7 @@ export async function signUpAction(formData: FormData) {
                 cpf,
                 phone,
                 position,
-                photo_url: null
+                photo_url
             })
             .select()
             .single();
