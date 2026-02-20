@@ -88,7 +88,10 @@ export function TeamDrawer({ confirmedMembers, rachaLocation, rachaDate }: TeamD
             // Determine number of teams
             const totalPlayers = selectedMembers.length;
             const targetTeamSize = 5; // Preference: 5 per team
-            let numTeams = Math.floor(totalPlayers / targetTeamSize);
+
+            // CHANGED: Use Math.ceil to ensure strict limit of 5 per team (creating overflow team if needed)
+            let numTeams = Math.ceil(totalPlayers / targetTeamSize);
+
             if (numTeams < 2 && totalPlayers >= 4) {
                 numTeams = 2; // Min 2 teams for a match
             } else if (numTeams === 0) {
@@ -105,78 +108,72 @@ export function TeamDrawer({ confirmedMembers, rachaLocation, rachaDate }: TeamD
             };
 
             // Helper to find the best team for a player (balancing levels)
-            // Strategy: Add to the team with the lowest total level that needs this position?
-            // Or simpler: Add to team with lowest total level, period.
             const distributePlayers = (players: Member[]) => {
-                for (const player of players) {
-                    // Find team with lowest total level sum
-                    // Preference: Lowest sum among teams with fewest players
-                    let minLen = Math.min(...newTeams.map(t => t.length));
-                    const candidateIndices = newTeams
-                        .map((t, idx) => ({ idx, len: t.length, sum: teamLevelSums[idx] }))
-                        // We want to fill evenly, so restrict to teams with minLen (unless we are filling specific slots)
-                        // But here we are just distributing generalized lists.
-                        // Let's stick to "Lowest Level Sum" to balance skills, 
-                        // BUT we must respect size balance. 
-                        // If one team has 3 players and another has 2, give to the one with 2.
-                        .sort((a, b) => {
-                            if (a.len !== b.len) return a.len - b.len; // Fill empty slots first
-                            return a.sum - b.sum; // Then balance levels
-                        });
+                // Use "Fill Logic" if we have enough players for at least 2 full teams (10+)
+                // This creates 5, 5, 3 structure instead of 5, 4, 4.
+                const useFillLogic = totalPlayers >= 10;
+                const fullTeamCount = Math.floor(totalPlayers / targetTeamSize);
 
-                    const chosenIndex = candidateIndices[0].idx;
-                    addPlayerToTeam(chosenIndex, player);
+                for (const player of players) {
+                    let candidates: { idx: number, len: number, sum: number }[] = [];
+
+                    if (useFillLogic) {
+                        // Prioritize creating Full Teams (size 5) before overflow
+                        const mainTeamsNotFull: { idx: number, len: number, sum: number }[] = [];
+                        const reserveTeams: { idx: number, len: number, sum: number }[] = [];
+
+                        for (let i = 0; i < numTeams; i++) {
+                            const team = newTeams[i];
+                            const sum = teamLevelSums[i];
+                            const stats = { idx: i, len: team.length, sum };
+
+                            // Teams 0 to fullTeamCount-1 are "Main"
+                            if (i < fullTeamCount) {
+                                if (team.length < targetTeamSize) {
+                                    mainTeamsNotFull.push(stats);
+                                }
+                            } else {
+                                reserveTeams.push(stats);
+                            }
+                        }
+
+                        if (mainTeamsNotFull.length > 0) {
+                            candidates = mainTeamsNotFull;
+                        } else {
+                            candidates = reserveTeams;
+                        }
+                    } else {
+                        // Balanced logic for small numbers (< 10)
+                        candidates = newTeams.map((t, idx) => ({ idx, len: t.length, sum: teamLevelSums[idx] }));
+                    }
+
+                    // Sort: Fill empty slots first (within candidates), then balance level
+                    candidates.sort((a, b) => {
+                        if (a.len !== b.len) return a.len - b.len;
+                        return a.sum - b.sum;
+                    });
+
+                    if (candidates.length > 0) {
+                        const chosenIndex = candidates[0].idx;
+                        addPlayerToTeam(chosenIndex, player);
+                    }
                 }
             };
 
-            // Specialized distribution for "Ideal Composition"
-            // Ideal: 1 GK, 2 DEF, 1 MID, 2 ATT (Total 6?) 
-            // User requested: 5 per team -> 2 Zagueiros, 1 Meio, 2 Atacantes. (Total 5).
-            // Usually GKs are separate. If there are GKs, we add them on top or swap? 
-            // Let's assume GK is +1 if present, or one of the 5. 
-            // If user says 2 Zag, 1 Mei, 2 Ata = 5 players. So GK replaces someone or is extra.
-            // Let's distribute GKs first (1 per team max)
-
-            // 1. Distribute GKs
-            // We strip GKs from the teams first so they don't count towards the "2 DEF" limit logic yet?
-            // Actually, let's just use the generic distribute for GKs first, they take a slot.
+            // Order of injection strictly matters to satisfy "Core Requirement first".
+            // 1. Determine GKs first
             distributePlayers(positionGroups.GK);
 
-            // 2. Distribute DEF (Target 2 per team)
-            // We want to ensure each team gets 2 DEFs if possible.
-            // We can iterate team by team? No, better to distribute pool of DEFs across teams.
-            // Loop 2 times: Round 1 of defs, Round 2 of defs.
-            const distributeRestricted = (players: Member[], maxPerTeam: number) => {
-                // Determine how many rounds of distribution we can fully do
-                // Actually, just distribute normally but prioritize teams that have FEWER of this position than needed?
-                // Too complex.
-                // Simpler: Just distribute using the balanced logic.
-                // Because we sort by level, the strongest DEF goes to Team A, next to Team B...
-                // Ideally this results in 1-1-1-1... then 2-2-2-2.
-                // So standard "distributePlayers" essentially does Round Robin if counts are equal.
-                // It balances size, then level.
-                distributePlayers(players);
-            };
-
-            // The user wants specifically: 2 DEF, then 1 MID, then 2 ATT.
-            // If we just dump them all in `distributePlayers` order:
-            // DEF -> fills slots 1..N (each team gets 1 DEF), then slots N+1..2N (each team gets 2nd DEF).
-            // MID -> fills slots.
-            // ATT -> fills slots.
-            // This perfectly achieves the goal of "2 DEF, 1 MID, 2 ATT" per team IF we have exact numbers.
-            // If we don't, it "mixes" naturally by filling the next available slots.
-
-            // Order of injection strictly matters to satisfy "Core Requirement first".
-            // 1. Defenders (Foundation)
+            // 2. Defenders (Foundation)
             distributePlayers(positionGroups.DEF);
 
-            // 2. Midfielders (Link)
+            // 3. Midfielders (Link)
             distributePlayers(positionGroups.MID);
 
-            // 3. Attackers (Finishers)
+            // 4. Attackers (Finishers)
             distributePlayers(positionGroups.ATT);
 
-            // 4. Others/Wildcards
+            // 5. Others/Wildcards
             distributePlayers(positionGroups.OTHER);
 
             setTeams(newTeams);

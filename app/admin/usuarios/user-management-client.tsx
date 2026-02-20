@@ -39,6 +39,11 @@ export default function UserManagementClient({ profiles }: { profiles: any[] }) 
         setLoading(profileId);
         const supabase = createClient();
 
+        // Optimistically update
+        setUserProfiles(prev => prev.map(p =>
+            p.id === profileId ? { ...p, role: newRole } : p
+        ));
+
         const { error } = await supabase
             .from('profiles')
             .update({ role: newRole })
@@ -46,10 +51,33 @@ export default function UserManagementClient({ profiles }: { profiles: any[] }) 
 
         if (error) {
             alert('Erro ao atualizar permissão: ' + error.message);
-        } else {
-            // Update local state
+            // Revert on error
             setUserProfiles(prev => prev.map(p =>
-                p.id === profileId ? { ...p, role: newRole } : p
+                p.id === profileId ? { ...p, role: profiles.find(orig => orig.id === profileId)?.role || 'user' } : p
+            ));
+        }
+        setLoading(null);
+    };
+
+    const handleLevelUpdate = async (memberId: string, newLevel: number) => {
+        setLoading(`${memberId}-level`);
+        const supabase = createClient();
+
+        console.log("Updating level for", memberId, "to", newLevel);
+
+        const { error } = await supabase
+            .from('members')
+            .update({ level: newLevel })
+            .eq('id', memberId);
+
+        if (error) {
+            console.error("Level update error:", error);
+            alert('Erro ao atualizar nível: ' + error.message);
+        } else {
+            setUserProfiles(prev => prev.map(p =>
+                p.members?.id === memberId
+                    ? { ...p, members: { ...p.members, level: newLevel } }
+                    : p
             ));
         }
         setLoading(null);
@@ -64,29 +92,6 @@ export default function UserManagementClient({ profiles }: { profiles: any[] }) 
             default:
                 return <Badge variant="secondary">Usuário</Badge>;
         }
-    };
-
-    const handleLevelUpdate = async (memberId: string, newLevel: number) => {
-        // Set loading state if needed, using a unique key like `${memberId}-level`
-        setLoading(`${memberId}-level`);
-        const supabase = createClient();
-
-        const { error } = await supabase
-            .from('members')
-            .update({ level: newLevel })
-            .eq('id', memberId);
-
-        if (error) {
-            alert('Erro ao atualizar nível: ' + error.message);
-        } else {
-            // Update local state
-            setUserProfiles(prev => prev.map(p =>
-                p.members?.id === memberId
-                    ? { ...p, members: { ...p.members, level: newLevel } }
-                    : p
-            ));
-        }
-        setLoading(null);
     };
 
     return (
