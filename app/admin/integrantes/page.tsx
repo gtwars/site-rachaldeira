@@ -49,7 +49,7 @@ export default function AdminIntegrantesPage() {
         const supabase = createClient();
         const { data, error } = await supabase
             .from('members')
-            .select('*, profiles(role)')
+            .select('*')
             .order('name');
 
         if (error) {
