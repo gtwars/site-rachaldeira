@@ -217,8 +217,8 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
 
     const handleGenerateKnockout = async () => {
         setSaving(true);
-        if (selectedQualifiers.length !== 4) {
-            setError('Selecione exatamente 4 times');
+        if (selectedQualifiers.length !== 6) {
+            setError('Selecione exatamente 6 times (1º e 2º vão direto para Semis)');
             setSaving(false);
             return;
         }
@@ -228,16 +228,28 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
             const matchesToInsert: any[] = [
                 {
                     championship_id: campId,
+                    bracket_position: 'qf-1',
+                    team_a_id: selectedQualifiers[2], // 3º colocado
+                    team_b_id: selectedQualifiers[5], // 6º colocado
+                    status: 'scheduled',
+                },
+                {
+                    championship_id: campId,
+                    bracket_position: 'qf-2',
+                    team_a_id: selectedQualifiers[3], // 4º colocado
+                    team_b_id: selectedQualifiers[4], // 5º colocado
+                    status: 'scheduled',
+                },
+                {
+                    championship_id: campId,
                     bracket_position: 'semi-1',
-                    team_a_id: selectedQualifiers[0], // 1º colocado
-                    team_b_id: selectedQualifiers[3], // 4º colocado
+                    team_a_id: selectedQualifiers[0], // 1º colocado direto
                     status: 'scheduled',
                 },
                 {
                     championship_id: campId,
                     bracket_position: 'semi-2',
-                    team_a_id: selectedQualifiers[1], // 2º colocado
-                    team_b_id: selectedQualifiers[2], // 3º colocado
+                    team_a_id: selectedQualifiers[1], // 2º colocado direto
                     status: 'scheduled',
                 },
                 {
@@ -634,7 +646,7 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
 
                 <Modal isOpen={isBracketModalOpen} onClose={() => setIsBracketModalOpen(false)} title="Gerar Mata-Mata" footer={<Button onClick={handleGenerateKnockout} disabled={saving}>Gerar</Button>}>
                     <div className="space-y-4">
-                        <p className="text-sm">Selecione 4 times na ordem de classificação (1º ao 4º):</p>
+                        <p className="text-sm">Selecione 6 times na ordem de classificação (1º ao 6º):</p>
                         <div className="max-h-60 overflow-y-auto space-y-1">
                             {teams.map(t => (
                                 <label key={t.id} className="flex items-center gap-2 p-1 hover:bg-gray-100 rounded cursor-pointer">

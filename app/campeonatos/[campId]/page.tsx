@@ -176,47 +176,47 @@ export default async function CampeonatoDetalhesPage({ params }: { params: Promi
 
                 {/* Standings */}
                 {showStandings && standings.length > 0 && (
-                    <Card className="mb-8 overflow-hidden border-none shadow-md rounded-2xl">
-                        <CardHeader className="bg-gray-900 text-white">
+                    <Card className="mb-8 overflow-hidden border-none shadow-xl rounded-2xl bg-gray-900 text-white">
+                        <CardHeader className="bg-black/20 border-b border-white/10">
                             <CardTitle className="text-lg">📊 {championship.format === 'bracket' ? 'Classificação — Fase de Grupos' : 'Classificação'}</CardTitle>
                         </CardHeader>
                         <CardContent className="p-0">
                             <Table>
-                                <TableHeader className="bg-gray-50">
-                                    <TableRow>
-                                        <TableHead className="w-16 text-center font-bold">Pos</TableHead>
-                                        <TableHead className="font-bold">Time</TableHead>
-                                        <TableHead className="text-center font-bold">PTS</TableHead>
-                                        <TableHead className="text-center font-medium hidden md:table-cell text-gray-400">PJ</TableHead>
-                                        <TableHead className="text-center font-medium hidden md:table-cell text-gray-400">V</TableHead>
-                                        <TableHead className="text-center font-medium hidden md:table-cell text-gray-400">E</TableHead>
-                                        <TableHead className="text-center font-medium hidden md:table-cell text-gray-400">D</TableHead>
-                                        <TableHead className="text-center font-medium text-gray-400">SG</TableHead>
+                                <TableHeader className="bg-white/5">
+                                    <TableRow className="border-white/10 hover:bg-transparent">
+                                        <TableHead className="w-16 text-center font-bold text-gray-300">Pos</TableHead>
+                                        <TableHead className="font-bold text-gray-300">Time</TableHead>
+                                        <TableHead className="text-center font-bold text-gray-300">PTS</TableHead>
+                                        <TableHead className="text-center font-medium hidden md:table-cell text-gray-400 uppercase text-[10px]">PJ</TableHead>
+                                        <TableHead className="text-center font-medium hidden md:table-cell text-gray-400 uppercase text-[10px]">V</TableHead>
+                                        <TableHead className="text-center font-medium hidden md:table-cell text-gray-400 uppercase text-[10px]">E</TableHead>
+                                        <TableHead className="text-center font-medium hidden md:table-cell text-gray-400 uppercase text-[10px]">D</TableHead>
+                                        <TableHead className="text-center font-medium text-gray-400 uppercase text-[10px]">SG</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {standings.map((team, idx) => (
-                                        <TableRow key={team.id} className={idx < 4 ? 'bg-white font-medium' : ''}>
+                                        <TableRow key={team.id} className={`border-white/5 hover:bg-white/5 transition-colors ${idx < 4 ? 'bg-white/5 font-medium' : ''}`}>
                                             <TableCell className="text-center">
-                                                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${idx === 0 ? 'bg-yellow-100 text-yellow-700' :
-                                                    idx === 1 ? 'bg-gray-100 text-gray-600' :
-                                                        idx === 2 ? 'bg-orange-100 text-orange-700' : 'text-gray-400'
+                                                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black ${idx === 0 ? 'bg-yellow-500 text-black' :
+                                                    idx === 1 ? 'bg-gray-400 text-black' :
+                                                        idx === 2 ? 'bg-amber-600 text-white' : 'text-gray-500'
                                                     }`}>
                                                     {idx + 1}
                                                 </span>
                                             </TableCell>
-                                            <TableCell className="font-bold">
-                                                <div className="flex items-center gap-2">
-                                                    {team.logo_url && <img src={team.logo_url} className="w-6 h-6 object-contain" alt="" />}
+                                            <TableCell className="font-bold text-gray-100">
+                                                <div className="flex items-center gap-3">
+                                                    {team.logo_url && <img src={team.logo_url} className="w-8 h-8 object-contain shadow-sm" alt="" />}
                                                     {team.name}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-center font-black text-blue-600">{team.points}</TableCell>
-                                            <TableCell className="text-center hidden md:table-cell">{team.played}</TableCell>
-                                            <TableCell className="text-center hidden md:table-cell text-green-600">{team.wins}</TableCell>
+                                            <TableCell className="text-center font-black text-yellow-500 text-lg">{team.points}</TableCell>
+                                            <TableCell className="text-center hidden md:table-cell text-gray-300">{team.played}</TableCell>
+                                            <TableCell className="text-center hidden md:table-cell text-gray-300">{team.wins}</TableCell>
                                             <TableCell className="text-center hidden md:table-cell text-gray-500">{team.draws}</TableCell>
-                                            <TableCell className="text-center hidden md:table-cell text-red-500">{team.losses}</TableCell>
-                                            <TableCell className="text-center font-semibold">{team.goalDiff}</TableCell>
+                                            <TableCell className="text-center hidden md:table-cell text-gray-500">{team.losses}</TableCell>
+                                            <TableCell className="text-center font-semibold text-gray-300">{team.goalDiff}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

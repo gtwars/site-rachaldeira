@@ -156,27 +156,33 @@ export function BracketViewer({ matches, campId }: BracketViewerProps) {
             {/* Headers */}
             <div className="flex items-start min-w-max justify-center">
                 {/* ═══ QUARTAS ═══ */}
-                <div className="flex flex-col items-center">
-                    <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 bg-gray-100 px-4 py-1 rounded-full">
-                        Quartas de Final
-                    </div>
-                    <div className="flex flex-col" style={{ gap: GAP_SM }}>
-                        {[1, 2, 3, 4].map((n) => (
-                            <div key={n}>
-                                {renderMatchCard(getMatch(`qf-${n}`), `Quartas ${n}`)}
+                {matches.some(m => m.bracket_position?.startsWith('qf')) && (
+                    <>
+                        <div className="flex flex-col items-center">
+                            <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 bg-gray-100 px-4 py-1 rounded-full text-center whitespace-nowrap">
+                                Quartas de Final
                             </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* ─── Lines QF → Semi ─── */}
-                <div className="flex flex-col justify-center" style={{ paddingTop: 32 }}>
-                    {[0, 1].map((i) => (
-                        <div key={i} style={{ height: CARD_H * 2 + GAP_SM, marginBottom: i === 0 ? GAP_SM : 0 }}>
-                            <Connector height={CARD_H * 2 + GAP_SM} />
+                            <div className="flex flex-col h-full justify-around" style={{ gap: GAP_SM }}>
+                                {matches.filter(m => m.bracket_position?.startsWith('qf')).map((m, idx) => (
+                                    <div key={m.id} style={{
+                                        marginTop: idx === 1 ? CARD_H / 2 : 0
+                                    }}>
+                                        {renderMatchCard(m, `Quartas ${idx + 1}`)}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    ))}
-                </div>
+
+                        {/* ─── Lines QF → Semi ─── */}
+                        <div className="flex flex-col justify-center" style={{ width: 48 }}>
+                            {/* Simplificando conectores para o formato assimétrico ou dinâmico */}
+                            <div className="flex flex-col justify-around h-full py-20">
+                                <div className="h-[2px] bg-gray-300 w-full" />
+                                <div className="h-[2px] bg-gray-300 w-full" />
+                            </div>
+                        </div>
+                    </>
+                )}
 
                 {/* ═══ SEMIFINAIS ═══ */}
                 <div className="flex flex-col items-center">
@@ -184,8 +190,8 @@ export function BracketViewer({ matches, campId }: BracketViewerProps) {
                         Semifinais
                     </div>
                     <div
-                        className="flex flex-col justify-around"
-                        style={{ gap: CARD_H + GAP_SM, paddingTop: (CARD_H + GAP_SM) / 2 }}
+                        className="flex flex-col justify-around h-full"
+                        style={{ gap: CARD_H + GAP_SM }}
                     >
                         {[1, 2].map((n) => (
                             <div key={n}>
@@ -198,9 +204,9 @@ export function BracketViewer({ matches, campId }: BracketViewerProps) {
                 {/* ─── Lines Semi → Final ─── */}
                 <div
                     className="flex flex-col justify-center"
-                    style={{ paddingTop: 32 + (CARD_H + GAP_SM) / 2 }}
+                    style={{ paddingTop: 32 }}
                 >
-                    <Connector height={CARD_H * 2 + CARD_H + GAP_SM} />
+                    <Connector height={CARD_H * 2 + GAP_SM} />
                 </div>
 
                 {/* ═══ FINAL ═══ */}
@@ -209,9 +215,7 @@ export function BracketViewer({ matches, campId }: BracketViewerProps) {
                         🏆 Grande Final
                     </div>
                     <div
-                        style={{
-                            paddingTop: CARD_H + GAP_SM + (CARD_H + GAP_SM) / 2,
-                        }}
+                        className="flex flex-col justify-center h-full"
                     >
                         {renderMatchCard(getMatch('final-1'), 'Final')}
                     </div>

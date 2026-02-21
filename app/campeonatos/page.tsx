@@ -49,19 +49,23 @@ export default async function CampeonatosPage() {
                                 <Link key={camp.id} href={`/campeonatos/${camp.id}`} className="group h-full block">
                                     <Card className="h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-t-4 border-t-yellow-500 overflow-hidden">
                                         <CardContent className="p-6 flex flex-col h-full">
-                                            <div className="mb-4">
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <span className={`px-3 py-1 text-xs font-bold uppercase rounded-full tracking-wide ${camp.status === 'in_progress' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                                                        }`}>
-                                                        {camp.status === 'in_progress' ? 'Em Andamento' : 'Em Breve'}
-                                                    </span>
-                                                    <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded">
-                                                        {camp.format === 'round_robin' ? 'Pontos Corridos' : 'Mata-mata'}
-                                                    </span>
+                                            <div className="flex gap-4 items-center mb-4">
+                                                {camp.logo_url && (
+                                                    <div className="relative w-12 h-12 flex-shrink-0">
+                                                        <img src={camp.logo_url} className="w-full h-full object-contain" alt="" />
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <span className={`px-3 py-1 text-[10px] font-black uppercase rounded-full tracking-wide ${camp.status === 'in_progress' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                                                            }`}>
+                                                            {camp.status === 'in_progress' ? 'Em Andamento' : 'Em Breve'}
+                                                        </span>
+                                                    </div>
+                                                    <h3 className="text-xl font-black text-gray-900 group-hover:text-black transition-colors">
+                                                        {camp.name}
+                                                    </h3>
                                                 </div>
-                                                <h3 className="text-2xl font-bold text-gray-900 group-hover:text-black transition-colors mb-2">
-                                                    {camp.name}
-                                                </h3>
                                             </div>
 
                                             <div className="space-y-3 text-sm text-gray-600 flex-1">
@@ -111,7 +115,13 @@ export default async function CampeonatosPage() {
                                         <Card className="h-full hover:shadow-md transition-all hover:bg-gray-50 border-gray-200">
                                             <CardContent className="p-5">
                                                 <div className="flex items-start justify-between mb-3">
-                                                    <Trophy size={20} className="text-gray-400 group-hover:text-yellow-500 transition-colors" />
+                                                    {camp.logo_url ? (
+                                                        <div className="relative w-8 h-8">
+                                                            <img src={camp.logo_url} className="w-full h-full object-contain" alt="" />
+                                                        </div>
+                                                    ) : (
+                                                        <Trophy size={20} className="text-gray-400 group-hover:text-yellow-500 transition-colors" />
+                                                    )}
                                                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">
                                                         {new Date(camp.start_date).getFullYear()}
                                                     </span>
