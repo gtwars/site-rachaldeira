@@ -142,76 +142,83 @@ export function BracketViewer({ matches, campId }: BracketViewerProps) {
     const COLUMN_W = 210;
 
     return (
-        <div className="bg-[#fcfdfe] border border-gray-100 rounded-3xl p-6 md:p-12 shadow-sm relative overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/30 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-green-50/20 rounded-full -ml-32 -mb-32 blur-3xl opacity-50" />
+        <div className="relative group">
+            {/* Scroll Hint for Mobile */}
+            <div className="md:hidden flex items-center justify-center gap-2 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest animate-pulse">
+                <span>← Arraste para ver o chaveamento →</span>
+            </div>
 
-            <div className="min-w-[850px] relative z-10">
-                {/* Headers */}
-                <div className="flex justify-center items-center mb-16 px-4">
-                    <div style={{ width: COLUMN_W }} className="flex justify-center">
-                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] bg-white px-5 py-2 rounded-full border border-gray-100 shadow-sm flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                            Quartas
-                        </span>
-                    </div>
-                    <div style={{ width: CONNECTOR_W }}></div>
-                    <div style={{ width: COLUMN_W }} className="flex justify-center">
-                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] bg-white px-5 py-2 rounded-full border border-gray-100 shadow-sm flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                            Semifinais
-                        </span>
-                    </div>
-                    <div style={{ width: CONNECTOR_W }}></div>
-                    <div style={{ width: COLUMN_W }} className="flex justify-center">
-                        <span className="text-[11px] font-black text-amber-600 uppercase tracking-[0.2em] bg-amber-50/50 px-5 py-2 rounded-full border border-amber-100 shadow-sm flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                            Final
-                        </span>
-                    </div>
-                </div>
+            <div className="bg-[#fcfdfe] border border-gray-100 rounded-3xl p-6 md:p-12 shadow-sm relative overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/30 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-green-50/20 rounded-full -ml-32 -mb-32 blur-3xl opacity-50" />
 
-                {/* Match Grid */}
-                <div className="flex items-stretch justify-center" style={{ minHeight: TOTAL_COLUMN_H }}>
-
-                    {/* QF Column */}
-                    <div className="flex flex-col justify-around space-y-12">
-                        {renderMatchCard(getMatch('qf-1'), 'Quartas 1')}
-                        {renderMatchCard(getMatch('qf-2'), 'Quartas 2')}
-                    </div>
-
-                    {/* Connector QF -> Semi (Straight) */}
-                    <div className="flex flex-col justify-around" style={{ width: CONNECTOR_W }}>
-                        <div className="flex-1 flex items-center"><div className="bg-gray-200 w-full h-[2px]" /></div>
-                        <div className="flex-1 flex items-center"><div className="bg-gray-200 w-full h-[2px]" /></div>
-                    </div>
-
-                    {/* SEMI Column */}
-                    <div className="flex flex-col justify-around space-y-12">
-                        {renderMatchCard(semi1, 'Semi 1')}
-                        {renderMatchCard(semi2, 'Semi 2')}
-                    </div>
-
-                    {/* Connector Semi -> Final (Fork) */}
-                    <div className="relative flex flex-col justify-around" style={{ width: CONNECTOR_W }}>
-                        {/* Fork structure using flex boxes for alignment */}
-                        <div className="flex-1 flex items-center">
-                            <div className="bg-gray-200 w-1/2 h-[2px]" />
+                <div className="min-w-[850px] relative z-10">
+                    {/* Headers */}
+                    <div className="flex justify-center items-center mb-16 px-4">
+                        <div style={{ width: COLUMN_W }} className="flex justify-center">
+                            <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] bg-white px-5 py-2 rounded-full border border-gray-100 shadow-sm flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                                Quartas
+                            </span>
                         </div>
-                        <div className="flex-1 flex items-center">
-                            <div className="bg-gray-200 w-1/2 h-[2px]" />
+                        <div style={{ width: CONNECTOR_W }}></div>
+                        <div style={{ width: COLUMN_W }} className="flex justify-center">
+                            <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] bg-white px-5 py-2 rounded-full border border-gray-100 shadow-sm flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                                Semifinais
+                            </span>
                         </div>
-                        {/* Vertical bar of the fork */}
-                        <div className="absolute bg-gray-200" style={{ top: '25%', bottom: '25%', left: '50%', width: 2 }} />
-                        {/* Center stem to final */}
-                        <div className="absolute bg-gray-200" style={{ top: '50%', left: '50%', width: '50%', height: 2 }} />
+                        <div style={{ width: CONNECTOR_W }}></div>
+                        <div style={{ width: COLUMN_W }} className="flex justify-center">
+                            <span className="text-[11px] font-black text-amber-600 uppercase tracking-[0.2em] bg-amber-50/50 px-5 py-2 rounded-full border border-amber-100 shadow-sm flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                Final
+                            </span>
+                        </div>
                     </div>
 
-                    {/* FINAL Column */}
-                    <div className="flex flex-col justify-center">
-                        {renderMatchCard(final, 'Grande Final')}
-                    </div>
+                    {/* Match Grid */}
+                    <div className="flex items-stretch justify-center" style={{ minHeight: TOTAL_COLUMN_H }}>
 
+                        {/* QF Column */}
+                        <div className="flex flex-col justify-around space-y-12">
+                            {renderMatchCard(getMatch('qf-1'), 'Quartas 1')}
+                            {renderMatchCard(getMatch('qf-2'), 'Quartas 2')}
+                        </div>
+
+                        {/* Connector QF -> Semi (Straight) */}
+                        <div className="flex flex-col justify-around" style={{ width: CONNECTOR_W }}>
+                            <div className="flex-1 flex items-center"><div className="bg-gray-200 w-full h-[2px]" /></div>
+                            <div className="flex-1 flex items-center"><div className="bg-gray-200 w-full h-[2px]" /></div>
+                        </div>
+
+                        {/* SEMI Column */}
+                        <div className="flex flex-col justify-around space-y-12">
+                            {renderMatchCard(semi1, 'Semi 1')}
+                            {renderMatchCard(semi2, 'Semi 2')}
+                        </div>
+
+                        {/* Connector Semi -> Final (Fork) */}
+                        <div className="relative flex flex-col justify-around" style={{ width: CONNECTOR_W }}>
+                            {/* Fork structure using flex boxes for alignment */}
+                            <div className="flex-1 flex items-center">
+                                <div className="bg-gray-200 w-1/2 h-[2px]" />
+                            </div>
+                            <div className="flex-1 flex items-center">
+                                <div className="bg-gray-200 w-1/2 h-[2px]" />
+                            </div>
+                            {/* Vertical bar of the fork */}
+                            <div className="absolute bg-gray-200" style={{ top: '25%', bottom: '25%', left: '50%', width: 2 }} />
+                            {/* Center stem to final */}
+                            <div className="absolute bg-gray-200" style={{ top: '50%', left: '50%', width: '50%', height: 2 }} />
+                        </div>
+
+                        {/* FINAL Column */}
+                        <div className="flex flex-col justify-center">
+                            {renderMatchCard(final, 'Grande Final')}
+                        </div>
+
+                    </div>
                 </div>
             </div>
         </div>

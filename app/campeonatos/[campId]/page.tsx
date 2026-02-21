@@ -188,10 +188,10 @@ export default async function CampeonatoDetalhesPage({ params }: { params: Promi
                                             <TableHead className="w-16 text-center font-bold text-gray-300">Pos</TableHead>
                                             <TableHead className="font-bold text-gray-300">Time</TableHead>
                                             <TableHead className="text-center font-bold text-gray-300">PTS</TableHead>
-                                            <TableHead className="text-center font-medium hidden md:table-cell text-gray-400 uppercase text-[10px]">PJ</TableHead>
-                                            <TableHead className="text-center font-medium hidden md:table-cell text-gray-400 uppercase text-[10px]">V</TableHead>
-                                            <TableHead className="text-center font-medium hidden md:table-cell text-gray-400 uppercase text-[10px]">E</TableHead>
-                                            <TableHead className="text-center font-medium hidden md:table-cell text-gray-400 uppercase text-[10px]">D</TableHead>
+                                            <TableHead className="text-center font-medium text-gray-400 uppercase text-[10px]">PJ</TableHead>
+                                            <TableHead className="text-center font-medium text-gray-400 uppercase text-[10px]">V</TableHead>
+                                            <TableHead className="text-center font-medium hidden sm:table-cell text-gray-400 uppercase text-[10px]">E</TableHead>
+                                            <TableHead className="text-center font-medium hidden sm:table-cell text-gray-400 uppercase text-[10px]">D</TableHead>
                                             <TableHead className="text-center font-medium text-gray-400 uppercase text-[10px]">SG</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -213,10 +213,10 @@ export default async function CampeonatoDetalhesPage({ params }: { params: Promi
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-center font-black text-yellow-500 text-lg">{team.points}</TableCell>
-                                                <TableCell className="text-center hidden md:table-cell text-gray-300">{team.played}</TableCell>
-                                                <TableCell className="text-center hidden md:table-cell text-gray-300">{team.wins}</TableCell>
-                                                <TableCell className="text-center hidden md:table-cell text-gray-500">{team.draws}</TableCell>
-                                                <TableCell className="text-center hidden md:table-cell text-gray-500">{team.losses}</TableCell>
+                                                <TableCell className="text-center text-gray-300">{team.played}</TableCell>
+                                                <TableCell className="text-center text-gray-300">{team.wins}</TableCell>
+                                                <TableCell className="text-center hidden sm:table-cell text-gray-500">{team.draws}</TableCell>
+                                                <TableCell className="text-center hidden sm:table-cell text-gray-500">{team.losses}</TableCell>
                                                 <TableCell className="text-center font-semibold text-gray-300">{team.goalDiff}</TableCell>
                                             </TableRow>
                                         ))}
