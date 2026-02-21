@@ -126,31 +126,53 @@ export default function RegistrarResultadoPage({ params }: { params: Promise<{ c
 
             // 2. Upsert scouts
             for (const stat of playerStats) {
-                // Só salvar se tiver algum dado ou se já existia
                 const hasData = stat.goals > 0 || stat.assists > 0 || stat.difficult_saves > 0 || stat.warnings > 0;
-
                 if (stat.id) {
-                    await supabase
-                        .from('match_player_stats')
-                        .update({
-                            goals: stat.goals,
-                            assists: stat.assists,
-                            difficult_saves: stat.difficult_saves,
-                            warnings: stat.warnings,
-                        })
-                        .eq('id', stat.id);
+                    await supabase.from('match_player_stats').update({
+                        goals: stat.goals,
+                        assists: stat.assists,
+                        difficult_saves: stat.difficult_saves,
+                        warnings: stat.warnings,
+                    }).eq('id', stat.id);
                 } else if (hasData) {
+                    await supabase.from('match_player_stats').insert({
+                        match_id: matchId,
+                        member_id: stat.member_id,
+                        team_id: stat.team_id,
+                        goals: stat.goals,
+                        assists: stat.assists,
+                        difficult_saves: stat.difficult_saves,
+                        warnings: stat.warnings,
+                    });
+                }
+            }
+
+            // 3. Avançar vencedor no chaveamento se for mata-mata
+            if (match.bracket_position) {
+                const winnerId = scoreA > scoreB ? match.team_a_id : match.team_b_id;
+                let nextPos = '';
+                let nextSlot = '';
+
+                if (match.bracket_position === 'qf-1') {
+                    nextPos = 'semi-1';
+                    nextSlot = 'team_b_id';
+                } else if (match.bracket_position === 'qf-2') {
+                    nextPos = 'semi-2';
+                    nextSlot = 'team_b_id';
+                } else if (match.bracket_position === 'semi-1') {
+                    nextPos = 'final-1';
+                    nextSlot = 'team_a_id';
+                } else if (match.bracket_position === 'semi-2') {
+                    nextPos = 'final-1';
+                    nextSlot = 'team_b_id';
+                }
+
+                if (nextPos && winnerId) {
                     await supabase
-                        .from('match_player_stats')
-                        .insert({
-                            match_id: matchId,
-                            member_id: stat.member_id,
-                            team_id: stat.team_id,
-                            goals: stat.goals,
-                            assists: stat.assists,
-                            difficult_saves: stat.difficult_saves,
-                            warnings: stat.warnings,
-                        });
+                        .from('championship_matches')
+                        .update({ [nextSlot]: winnerId })
+                        .eq('championship_id', campId)
+                        .eq('bracket_position', nextPos);
                 }
             }
 
