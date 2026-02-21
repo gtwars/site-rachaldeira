@@ -25,7 +25,7 @@ export async function signUpAction(formData: FormData) {
             const filePath = `avatars/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
-                .from('Foto dos Usuarios')
+                .from('Fotos')
                 .upload(filePath, photo, {
                     contentType: photo.type,
                     upsert: true
@@ -37,7 +37,7 @@ export async function signUpAction(formData: FormData) {
                 // For now, let's log and continue
             } else {
                 const { data: { publicUrl } } = supabase.storage
-                    .from('Foto dos Usuarios')
+                    .from('Fotos')
                     .getPublicUrl(filePath);
                 photo_url = publicUrl;
             }

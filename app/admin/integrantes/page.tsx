@@ -103,13 +103,13 @@ export default function AdminIntegrantesPage() {
                 const fileExt = photoFile.name.split('.').pop();
                 const fileName = `${Math.random()}.${fileExt}`;
                 const { data: uploadData, error: uploadError } = await supabase.storage
-                    .from('photos')
+                    .from('Fotos')
                     .upload(fileName, photoFile);
 
                 if (uploadError) throw uploadError;
 
                 const { data: { publicUrl } } = supabase.storage
-                    .from('photos')
+                    .from('Fotos')
                     .getPublicUrl(fileName);
 
                 photoUrl = publicUrl;

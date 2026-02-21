@@ -173,19 +173,18 @@ export default function UserProfilePage() {
         const file = e.target.files[0];
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `avatars/${fileName}`;
 
         setSaveStatus('saving');
         try {
             const { error: uploadError } = await supabase.storage
-                .from('Foto dos Usuarios')
-                .upload(filePath, file);
+                .from('Fotos')
+                .upload(fileName, file);
 
             if (uploadError) throw uploadError;
 
             const { data: { publicUrl } } = supabase.storage
-                .from('Foto dos Usuarios')
-                .getPublicUrl(filePath);
+                .from('Fotos')
+                .getPublicUrl(fileName);
 
             setFormData(prev => ({ ...prev, photo_url: publicUrl }));
             setSaveStatus('idle');
