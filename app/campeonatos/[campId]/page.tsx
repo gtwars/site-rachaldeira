@@ -119,15 +119,15 @@ export default async function CampeonatoDetalhesPage({ params }: { params: Promi
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="mb-8 p-6 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
                         {championship.logo_url && (
-                            <div className="relative w-20 h-20">
+                            <div className="relative w-32 h-32 md:w-40 md:h-40 filter drop-shadow-md">
                                 <Image src={championship.logo_url} alt={championship.name} fill className="object-contain" />
                             </div>
                         )}
                         <div>
-                            <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">{championship.name}</h1>
-                            <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-500 font-medium">
+                            <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">{championship.name}</h1>
+                            <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-3 text-sm text-gray-500 font-medium">
                                 <span className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(championship.start_date).toLocaleDateString('pt-BR')}</span>
                                 <span>📍 {championship.location}</span>
                                 <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase ${championship.status === 'in_progress' ? 'bg-green-100 text-green-700' :

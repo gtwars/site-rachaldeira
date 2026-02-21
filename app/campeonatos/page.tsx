@@ -48,41 +48,47 @@ export default async function CampeonatosPage() {
                             {activeChampionships.map((camp) => (
                                 <Link key={camp.id} href={`/campeonatos/${camp.id}`} className="group h-full block">
                                     <Card className="h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-t-4 border-t-yellow-500 overflow-hidden">
-                                        <CardContent className="p-6 flex flex-col h-full">
-                                            <div className="flex gap-4 items-center mb-4">
-                                                {camp.logo_url && (
-                                                    <div className="relative w-12 h-12 flex-shrink-0">
-                                                        <img src={camp.logo_url} className="w-full h-full object-contain" alt="" />
+                                        <CardContent className="p-0 flex flex-col h-full">
+                                            {/* Top Promotional Logo Area */}
+                                            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-8 flex items-center justify-center border-b border-gray-100">
+                                                {camp.logo_url ? (
+                                                    <div className="relative w-32 h-32 transform group-hover:scale-110 transition-transform duration-500">
+                                                        <img src={camp.logo_url} className="w-full h-full object-contain filter drop-shadow-xl" alt="" />
                                                     </div>
+                                                ) : (
+                                                    <Trophy size={64} className="text-gray-200" />
                                                 )}
-                                                <div>
-                                                    <div className="flex justify-between items-start mb-1">
+                                            </div>
+
+                                            <div className="p-6 flex-1 flex flex-col">
+                                                <div className="mb-4">
+                                                    <div className="flex justify-between items-center mb-2">
                                                         <span className={`px-3 py-1 text-[10px] font-black uppercase rounded-full tracking-wide ${camp.status === 'in_progress' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                                                             }`}>
                                                             {camp.status === 'in_progress' ? 'Em Andamento' : 'Em Breve'}
                                                         </span>
                                                     </div>
-                                                    <h3 className="text-xl font-black text-gray-900 group-hover:text-black transition-colors">
+                                                    <h3 className="text-2xl font-black text-gray-900 group-hover:text-amber-600 transition-colors tracking-tight">
                                                         {camp.name}
                                                     </h3>
                                                 </div>
-                                            </div>
 
-                                            <div className="space-y-3 text-sm text-gray-600 flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <Calendar size={16} className="text-gray-900" />
-                                                    <span>Início: <strong>{new Date(camp.start_date).toLocaleDateString('pt-BR')}</strong></span>
+                                                <div className="space-y-3 text-sm text-gray-600 flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <Calendar size={16} className="text-gray-900" />
+                                                        <span>Início: <strong>{new Date(camp.start_date).toLocaleDateString('pt-BR')}</strong></span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <MapPin size={16} className="text-gray-900" />
+                                                        <span>{camp.location}</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <MapPin size={16} className="text-gray-900" />
-                                                    <span>{camp.location}</span>
-                                                </div>
-                                            </div>
 
-                                            <div className="mt-6 pt-4 border-t border-gray-100">
-                                                <Button className="w-full bg-gray-900 hover:bg-black group-hover:shadow-md transition-all">
-                                                    Ver Detalhes <ArrowRight size={16} className="ml-2" />
-                                                </Button>
+                                                <div className="mt-6 pt-4 border-t border-gray-100">
+                                                    <Button className="w-full bg-gray-900 hover:bg-black group-hover:shadow-md transition-all">
+                                                        Ver Detalhes <ArrowRight size={16} className="ml-2" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -113,20 +119,21 @@ export default async function CampeonatosPage() {
                                 {pastChampionships.map((camp) => (
                                     <Link key={camp.id} href={`/campeonatos/${camp.id}`} className="group h-full block">
                                         <Card className="h-full hover:shadow-md transition-all hover:bg-gray-50 border-gray-200">
-                                            <CardContent className="p-5">
-                                                <div className="flex items-start justify-between mb-3">
+                                            <CardContent className="p-5 flex flex-col items-center text-center">
+                                                <div className="relative w-full aspect-square bg-gray-50 rounded-xl mb-4 flex items-center justify-center border border-gray-100 group-hover:bg-white transition-colors overflow-hidden">
                                                     {camp.logo_url ? (
-                                                        <div className="relative w-8 h-8">
-                                                            <img src={camp.logo_url} className="w-full h-full object-contain" alt="" />
-                                                        </div>
+                                                        <img src={camp.logo_url} className="w-3/4 h-3/4 object-contain filter drop-shadow-md group-hover:scale-110 transition-transform duration-500" alt="" />
                                                     ) : (
-                                                        <Trophy size={20} className="text-gray-400 group-hover:text-yellow-500 transition-colors" />
+                                                        <Trophy size={40} className="text-gray-200" />
                                                     )}
-                                                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                                                        {new Date(camp.start_date).getFullYear()}
-                                                    </span>
+                                                    <div className="absolute top-2 right-2">
+                                                        <span className="text-[10px] font-black text-gray-400 bg-white/80 backdrop-blur-sm px-2 py-1 rounded shadow-sm border border-gray-100">
+                                                            {new Date(camp.start_date).getFullYear()}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <h3 className="text-lg font-bold text-gray-700 group-hover:text-gray-900 mb-2">
+
+                                                <h3 className="text-lg font-black text-gray-800 group-hover:text-gray-900 mb-1 leading-tight px-2">
                                                     {camp.name}
                                                 </h3>
                                                 <p className="text-sm text-gray-500 mb-4 line-clamp-2">
