@@ -229,15 +229,15 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
                 {
                     championship_id: campId,
                     bracket_position: 'qf-1',
-                    team_a_id: selectedQualifiers[2], // 3º colocado
-                    team_b_id: selectedQualifiers[5], // 6º colocado
+                    team_a_id: selectedQualifiers[3], // 4º colocado
+                    team_b_id: selectedQualifiers[4], // 5º colocado
                     status: 'scheduled',
                 },
                 {
                     championship_id: campId,
                     bracket_position: 'qf-2',
-                    team_a_id: selectedQualifiers[3], // 4º colocado
-                    team_b_id: selectedQualifiers[4], // 5º colocado
+                    team_a_id: selectedQualifiers[2], // 3º colocado
+                    team_b_id: selectedQualifiers[5], // 6º colocado
                     status: 'scheduled',
                 },
                 {
