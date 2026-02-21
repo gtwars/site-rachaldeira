@@ -10,7 +10,7 @@ import { Modal } from '@/components/ui/modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pencil, Trash2, Plus, Users } from 'lucide-react';
+import { Pencil, Trash2, Plus, Users, AlertCircle } from 'lucide-react';
 
 export default function AdminIntegrantesPage() {
     const router = useRouter();
@@ -47,19 +47,36 @@ export default function AdminIntegrantesPage() {
     };
 
     const loadMembers = async () => {
-        const supabase = createClient();
-        const { data, error } = await supabase
-            .from('members')
-            .select('*, profiles(role)')
-            .order('name');
+        try {
+            setError('');
+            const supabase = createClient();
 
-        if (error) {
-            console.error('Error loading members:', error);
-            setError(error.message);
+            // Querying members and optionally profiles if relationship exists
+            // We use a simpler select first to avoid join errors if the relationship is ambiguous
+            const { data, error: mError } = await supabase
+                .from('members')
+                .select('*, profiles(role)')
+                .order('name');
+
+            if (mError) {
+                console.error('Error loading members with profiles:', mError);
+                // Fallback to members only if join fails
+                const { data: justMembers, error: fallbackError } = await supabase
+                    .from('members')
+                    .select('*')
+                    .order('name');
+
+                if (fallbackError) throw fallbackError;
+                setMembers(justMembers || []);
+            } else {
+                setMembers(data || []);
+            }
+        } catch (err: any) {
+            console.error('Final error:', err);
+            setError('Erro ao carregar integrantes: ' + err.message);
+        } finally {
+            setLoading(false);
         }
-
-        setMembers(data || []);
-        setLoading(false);
     };
 
     const handleOpenModal = (member?: any) => {
@@ -99,11 +116,10 @@ export default function AdminIntegrantesPage() {
             const supabase = createClient();
             let photoUrl = editingMember?.photo_url;
 
-            // Upload foto se houver
             if (photoFile) {
                 const fileExt = photoFile.name.split('.').pop();
-                const fileName = `${Math.random()}.${fileExt}`;
-                const { data: uploadData, error: uploadError } = await supabase.storage
+                const fileName = `${Date.now()}_${Math.random()}.${fileExt}`;
+                const { error: uploadError } = await supabase.storage
                     .from('Fotos')
                     .upload(fileName, photoFile);
 
@@ -127,7 +143,6 @@ export default function AdminIntegrantesPage() {
             };
 
             if (editingMember) {
-                // Update
                 const { error: updateError } = await supabase
                     .from('members')
                     .update(memberData)
@@ -135,7 +150,6 @@ export default function AdminIntegrantesPage() {
 
                 if (updateError) throw updateError;
             } else {
-                // Insert
                 const { data: newMember, error: insertError } = await supabase
                     .from('members')
                     .insert(memberData)
@@ -144,10 +158,8 @@ export default function AdminIntegrantesPage() {
 
                 if (insertError) throw insertError;
 
-                // Criar usuário se tiver senha
                 if (formData.password) {
                     const { data: { session } } = await supabase.auth.getSession();
-
                     const response = await fetch('/api/admin/create-user', {
                         method: 'POST',
                         headers: {
@@ -186,7 +198,9 @@ export default function AdminIntegrantesPage() {
             .delete()
             .eq('id', id);
 
-        if (!error) {
+        if (error) {
+            setError('Erro ao excluir: ' + error.message);
+        } else {
             loadMembers();
         }
     };
@@ -200,7 +214,6 @@ export default function AdminIntegrantesPage() {
             });
 
             if (error) throw error;
-
             loadMembers();
             alert('Permissão atualizada com sucesso!');
         } catch (err: any) {
@@ -210,7 +223,12 @@ export default function AdminIntegrantesPage() {
     };
 
     if (loading) {
-        return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+                <p className="text-gray-500 font-medium">Carregando integrantes...</p>
+            </div>
+        );
     }
 
     const filteredMembers = members.filter(m => showInactive || m.is_active !== false);
@@ -230,6 +248,13 @@ export default function AdminIntegrantesPage() {
                         Novo Integrante
                     </Button>
                 </div>
+
+                {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-3">
+                        <AlertCircle className="h-5 w-5 text-red-500" />
+                        <span className="font-semibold">{error}</span>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <Card className="bg-white border-none shadow-sm overflow-hidden">
@@ -360,7 +385,7 @@ export default function AdminIntegrantesPage() {
                                     {filteredMembers.length === 0 && (
                                         <TableRow>
                                             <TableCell colSpan={7} className="h-32 text-center text-gray-500 font-medium">
-                                                Nenhum integrante encontrado.
+                                                {loading ? 'Carregando...' : 'Nenhum integrante encontrado.'}
                                             </TableCell>
                                         </TableRow>
                                     )}
