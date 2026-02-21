@@ -22,23 +22,20 @@ export async function signUpAction(formData: FormData) {
         if (photo && photo.size > 0) {
             const fileExt = photo.name.split('.').pop();
             const fileName = `${Date.now()}_${Math.random()}.${fileExt}`;
-            const filePath = `avatars/${fileName}`;
-
+            // Upload to Fotos bucket root to match admin behavior
             const { error: uploadError } = await supabase.storage
                 .from('Fotos')
-                .upload(filePath, photo, {
+                .upload(fileName, photo, {
                     contentType: photo.type,
                     upsert: true
                 });
 
             if (uploadError) {
                 console.error('Error uploading photo:', uploadError);
-                // Continue without photo or handle error?
-                // For now, let's log and continue
             } else {
                 const { data: { publicUrl } } = supabase.storage
                     .from('Fotos')
-                    .getPublicUrl(filePath);
+                    .getPublicUrl(fileName);
                 photo_url = publicUrl;
             }
         }

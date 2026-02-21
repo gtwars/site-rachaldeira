@@ -27,28 +27,30 @@ export function BracketViewer({ matches, campId }: BracketViewerProps) {
         isWinner: boolean
     ) => (
         <div
-            className={`flex justify-between items-center px-3 py-2 ${isWinner ? 'bg-green-50' : 'bg-white'
+            className={`flex justify-between items-center px-4 py-2.5 ${isWinner ? 'bg-green-50/50' : 'bg-white'
                 }`}
         >
             <span
-                className={`text-xs truncate max-w-[120px] flex items-center gap-1.5 ${isWinner ? 'font-bold text-green-800' : 'text-gray-700'
+                className={`text-[12px] truncate max-w-[130px] flex items-center gap-2 ${isWinner ? 'font-black text-green-700' : 'text-gray-700 font-medium'
                     }`}
             >
-                {team?.logo_url && (
+                {team?.logo_url ? (
                     <img
                         src={team.logo_url}
-                        className="w-4 h-4 object-contain rounded-full"
+                        className="w-5 h-5 object-contain rounded-full border border-gray-100 shadow-sm bg-white"
                         alt=""
                     />
+                ) : (
+                    <div className="w-5 h-5 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-[8px] text-gray-300 font-bold">?</div>
                 )}
                 {team?.name || (
-                    <span className="italic text-gray-400">A Definir</span>
+                    <span className="italic text-gray-400 font-normal">A Definir</span>
                 )}
             </span>
             <span
-                className={`text-sm font-mono px-2 py-0.5 rounded min-w-[28px] text-center ${isWinner
-                    ? 'bg-green-200 text-green-900 font-bold'
-                    : 'bg-gray-100 text-gray-500'
+                className={`text-xs font-mono px-2 py-1 rounded-md min-w-[28px] text-center border ${isWinner
+                    ? 'bg-green-100 text-green-900 font-bold border-green-200 shadow-sm'
+                    : 'bg-gray-50 text-gray-500 border-gray-100'
                     }`}
             >
                 {score ?? '-'}
@@ -59,7 +61,7 @@ export function BracketViewer({ matches, campId }: BracketViewerProps) {
     const renderMatchCard = (match: Match | undefined, label: string) => {
         if (!match) {
             return (
-                <div className="w-[210px] h-[76px] border-2 border-dashed border-gray-200 rounded-lg bg-gray-50/60 flex items-center justify-center text-xs text-gray-400 italic">
+                <div className="w-[210px] h-[86px] border-2 border-dashed border-gray-100 rounded-xl bg-gray-50/40 flex items-center justify-center text-[10px] text-gray-400 font-medium uppercase tracking-widest italic">
                     {label}
                 </div>
             );
@@ -73,17 +75,17 @@ export function BracketViewer({ matches, campId }: BracketViewerProps) {
 
         const borderColor =
             match.status === 'in_progress'
-                ? 'border-green-400 shadow-md shadow-green-100'
+                ? 'border-green-400 ring-4 ring-green-50/50'
                 : match.status === 'completed'
-                    ? 'border-gray-300'
-                    : 'border-gray-200';
+                    ? 'border-gray-200'
+                    : 'border-gray-100';
 
         const statusBar =
             match.status === 'in_progress'
                 ? 'bg-green-500 text-white'
                 : match.status === 'completed'
-                    ? 'bg-gray-200 text-gray-500'
-                    : 'bg-blue-50 text-blue-400';
+                    ? 'bg-gray-100 text-gray-500'
+                    : 'bg-slate-50 text-slate-300';
 
         const statusText =
             match.status === 'in_progress'
@@ -95,12 +97,12 @@ export function BracketViewer({ matches, campId }: BracketViewerProps) {
         const hasTeams = match.team_a && match.team_b;
 
         const cardContent = (
-            <div className={`w-[210px] rounded-lg border-2 overflow-hidden ${borderColor} ${hasTeams ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}>
+            <div className={`w-[210px] rounded-xl border bg-white shadow-sm transition-all duration-300 ${borderColor} ${hasTeams ? 'cursor-pointer hover:shadow-lg hover:border-blue-400 hover:-translate-y-0.5' : ''}`}>
                 {renderTeamRow(match.team_a, sA, aWin)}
-                <div className="h-[1px] bg-gray-200" />
+                <div className="h-[1px] bg-gray-50" />
                 {renderTeamRow(match.team_b, sB, bWin)}
                 <div
-                    className={`text-[9px] text-center py-[3px] uppercase tracking-widest font-semibold ${statusBar}`}
+                    className={`text-[9px] text-center py-1 uppercase tracking-widest font-black ${statusBar}`}
                 >
                     {statusText}
                 </div>
@@ -118,96 +120,87 @@ export function BracketViewer({ matches, campId }: BracketViewerProps) {
         return cardContent;
     };
 
-    const CARD_H = 76;
-    const VERTICAL_GAP = 32;
+    // Identified positions for 6-team bracket
+    const qf1 = getMatch('qf-1');
+    const qf2 = getMatch('qf-2');
+    const semi1 = getMatch('semi-1');
+    const semi2 = getMatch('semi-2');
+    const final = getMatch('final-1');
 
-    // Filter rounds
-    const qfMatches = matches.filter(m => m.bracket_position?.startsWith('qf')).sort((a, b) => a.bracket_position.localeCompare(b.bracket_position));
-    const displayQfMatches = qfMatches.length === 2 ? [qfMatches[1], qfMatches[0]] : qfMatches;
-    const semiMatches = [getMatch('semi-1'), getMatch('semi-2')].filter(Boolean) as Match[];
-    const hasFinal = !!getMatch('final-1');
+    // Sizing
+    const MATCH_H = 86;
+    const TOTAL_COLUMN_H = 300; // Total height of the column area
+    const CONNECTOR_W = 60;
+    const COLUMN_W = 210;
 
     return (
-        <div className="bg-gradient-to-br from-slate-50 to-white border border-gray-200 rounded-xl p-8 overflow-x-auto">
-            <div className="flex items-center min-w-max justify-center gap-0">
+        <div className="bg-[#fcfdfe] border border-gray-100 rounded-3xl p-12 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/30 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-green-50/20 rounded-full -ml-32 -mb-32 blur-3xl opacity-50" />
 
-                {/* ═══ QUARTAS ═══ */}
-                {qfMatches.length > 0 && (
-                    <>
-                        <div className="flex flex-col items-center">
-                            <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-8 bg-gray-100/80 px-4 py-1.5 rounded-full border border-gray-200">
-                                Quartas de Final
-                            </div>
-                            <div className="flex flex-col justify-around h-full" style={{ gap: qfMatches.length === 2 ? CARD_H + VERTICAL_GAP : VERTICAL_GAP }}>
-                                {displayQfMatches.map((m, idx) => (
-                                    <div key={m.id}>
-                                        {renderMatchCard(m, `Quartas ${idx + 1}`)}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Lines QF -> Semi */}
-                        <div className="flex flex-col justify-center" style={{ width: 64, marginTop: 40 }}>
-                            <div className="relative w-full" style={{ height: (CARD_H * 2) + VERTICAL_GAP }}>
-                                {qfMatches.length === 2 ? (
-                                    <>
-                                        <div className="absolute bg-gray-200" style={{ top: '25%', left: 0, width: '100%', height: 2 }} />
-                                        <div className="absolute bg-gray-200" style={{ top: '75%', left: 0, width: '100%', height: 2 }} />
-                                    </>
-                                ) : (
-                                    // Case 8 teams or others - simplified for consistency
-                                    <>
-                                        <div className="absolute bg-gray-200" style={{ top: '12.5%', left: 0, width: '100%', height: 2 }} />
-                                        <div className="absolute bg-gray-200" style={{ top: '37.5%', left: 0, width: '100%', height: 2 }} />
-                                        <div className="absolute bg-gray-200" style={{ top: '62.5%', left: 0, width: '100%', height: 2 }} />
-                                        <div className="absolute bg-gray-200" style={{ top: '87.5%', left: 0, width: '100%', height: 2 }} />
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    </>
-                )}
-
-                {/* ═══ SEMIFINAIS ═══ */}
-                <div className="flex flex-col items-center">
-                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-8 bg-gray-100/80 px-4 py-1.5 rounded-full border border-gray-200">
-                        Semifinais
+            <div className="min-w-[850px] relative z-10">
+                {/* Headers */}
+                <div className="flex justify-center items-center mb-16 px-4">
+                    <div style={{ width: COLUMN_W }} className="flex justify-center">
+                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] bg-white px-5 py-2 rounded-full border border-gray-100 shadow-sm flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                            Quartas
+                        </span>
                     </div>
-                    <div
-                        className="flex flex-col justify-around h-full"
-                        style={{ gap: VERTICAL_GAP + CARD_H }}
-                    >
-                        {[1, 2].map((n) => (
-                            <div key={n}>
-                                {renderMatchCard(getMatch(`semi-${n}`), `Semi ${n}`)}
-                            </div>
-                        ))}
+                    <div style={{ width: CONNECTOR_W }}></div>
+                    <div style={{ width: COLUMN_W }} className="flex justify-center">
+                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] bg-white px-5 py-2 rounded-full border border-gray-100 shadow-sm flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                            Semifinais
+                        </span>
+                    </div>
+                    <div style={{ width: CONNECTOR_W }}></div>
+                    <div style={{ width: COLUMN_W }} className="flex justify-center">
+                        <span className="text-[11px] font-black text-amber-600 uppercase tracking-[0.2em] bg-amber-50/50 px-5 py-2 rounded-full border border-amber-100 shadow-sm flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                            Final
+                        </span>
                     </div>
                 </div>
 
-                {/* Connector Semi -> Final */}
-                <div className="flex flex-col justify-center" style={{ width: 64, marginTop: 40 }}>
-                    <div className="relative w-full" style={{ height: (CARD_H * 2) + VERTICAL_GAP }}>
-                        {/* horizontal top */}
-                        <div className="absolute bg-gray-200" style={{ top: '25%', left: 0, width: '50%', height: 2 }} />
-                        {/* horizontal bottom */}
-                        <div className="absolute bg-gray-200" style={{ top: '75%', left: 0, width: '50%', height: 2 }} />
-                        {/* vertical connecting them */}
-                        <div className="absolute bg-gray-200" style={{ top: '25%', left: '50%', width: 2, height: '50%' }} />
-                        {/* horizontal to mid */}
+                {/* Match Grid */}
+                <div className="flex items-center justify-center" style={{ height: TOTAL_COLUMN_H }}>
+
+                    {/* QF Column */}
+                    <div className="flex flex-col h-full justify-between py-0">
+                        {renderMatchCard(qf1, 'Quartas 1')}
+                        {renderMatchCard(qf2, 'Quartas 2')}
+                    </div>
+
+                    {/* Connector QF -> Semi (Straight) */}
+                    <div className="relative h-full" style={{ width: CONNECTOR_W }}>
+                        <div className="absolute bg-gray-200" style={{ top: MATCH_H / 2, left: 0, width: '100%', height: 2 }} />
+                        <div className="absolute bg-gray-200" style={{ bottom: MATCH_H / 2, left: 0, width: '100%', height: 2 }} />
+                    </div>
+
+                    {/* SEMI Column */}
+                    <div className="flex flex-col h-full justify-between py-0">
+                        {renderMatchCard(semi1, 'Semi 1')}
+                        {renderMatchCard(semi2, 'Semi 2')}
+                    </div>
+
+                    {/* Connector Semi -> Final (Fork) */}
+                    <div className="relative h-full" style={{ width: CONNECTOR_W }}>
+                        {/* Horizontal start top */}
+                        <div className="absolute bg-gray-200" style={{ top: MATCH_H / 2, left: 0, width: '50%', height: 2 }} />
+                        {/* Horizontal start bottom */}
+                        <div className="absolute bg-gray-200" style={{ bottom: MATCH_H / 2, left: 0, width: '50%', height: 2 }} />
+                        {/* Vertical line connecting them */}
+                        <div className="absolute bg-gray-200" style={{ top: MATCH_H / 2, bottom: MATCH_H / 2, left: '50%', width: 2 }} />
+                        {/* Horizontal line to Final */}
                         <div className="absolute bg-gray-200" style={{ top: '50%', left: '50%', width: '50%', height: 2 }} />
                     </div>
-                </div>
 
-                {/* ═══ FINAL ═══ */}
-                <div className="flex flex-col items-center">
-                    <div className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-8 bg-amber-50 px-4 py-1.5 rounded-full border border-amber-200 shadow-sm">
-                        🏆 Grande Final
+                    {/* FINAL Column */}
+                    <div className="flex flex-col h-full justify-center">
+                        {renderMatchCard(final, 'Grande Final')}
                     </div>
-                    <div className="flex flex-col justify-center h-full">
-                        {renderMatchCard(getMatch('final-1'), 'Final')}
-                    </div>
+
                 </div>
             </div>
         </div>
