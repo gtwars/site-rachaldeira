@@ -106,23 +106,21 @@ export default function ScoutsPage({ params }: { params: Promise<{ rachaId: stri
 
         const dbScouts = scoutsData || [];
 
-        // Consolidar: Apenas quem está confirmado "IN", ordenado alfabeticamente por nome
         const consolidatedScouts = (attendanceData || [])
-            .sort((a, b) => (a.members?.name || '').localeCompare(b.members?.name || ''))
             .map(att => {
-                const existing = dbScouts.find(s => s.member_id === att.member_id);
+                const existingScout = dbScouts.find(s => s.member_id === att.member_id);
                 return {
                     racha_id: rachaId,
                     member_id: att.member_id,
-                    goals: existing?.goals || 0,
-                    assists: existing?.assists || 0,
-                    difficult_saves: existing?.difficult_saves || 0,
-                    warnings: existing?.warnings || 0,
+                    goals: existingScout?.goals || 0,
+                    assists: existingScout?.assists || 0,
+                    difficult_saves: existingScout?.difficult_saves || 0,
+                    warnings: existingScout?.warnings || 0,
+                    name: att.members?.name || 'Membro desconhecido'
                 };
-            });
+            })
+            .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-        // Adicionar também quem já tem scout salvo, mesmo que não esteja na lista de presença (legado do avulso anterior)
-        // mas vamos priorizar a vontade do usuário de "apenas confirmados" filtrando no estado final.
         setScouts(consolidatedScouts);
         setLoading(false);
     };

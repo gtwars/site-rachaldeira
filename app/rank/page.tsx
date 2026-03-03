@@ -145,7 +145,7 @@ export default async function RankingPage() {
         const assists = memberRachaScouts.reduce((sum, sumS) => sum + (sumS.assists || 0), 0);
         const saves = memberRachaScouts.reduce((sum, sumS) => sum + (sumS.difficult_saves || 0), 0);
 
-        // Participações: Apenas Rachas ENCERRADOS (reais) + Soma de Ajustes Manuais
+        // Participações: Apenas Rachas ENCERRADOS (reais) que o jogador tem presença "in" + Soma de Ajustes Manuais
         const closedRealRachaIds = allRachas?.filter(r => r.status === 'closed' && !adjustmentRachaIds.includes(r.id)).map(r => r.id) || [];
         const memberAttendanceCount = attendance?.filter(a => a.member_id === member.id && closedRealRachaIds.includes(a.racha_id)).length || 0;
 

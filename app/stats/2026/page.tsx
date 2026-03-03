@@ -54,10 +54,12 @@ export default async function Stats2026Page() {
         const saves = memberRachaScouts.reduce((sum, s) => sum + (s.difficult_saves || 0), 0);
         const warnings = memberRachaScouts.reduce((sum, s) => sum + (s.warnings || 0), 0);
 
-        // Jogos: Rachas Fechados + Soma de Ajustes Manuais
+        // Jogos: Apenas Rachas ENCERRADOS (reais) que o jogador tem presença "in" + Soma de Ajustes Manuais
         const closedRealRachaIds = allRachas?.filter(r => r.status === 'closed' && !adjustmentRachaIds.includes(r.id)).map(r => r.id) || [];
         const manualGames = manualAdjustments.reduce((sum, s) => sum + ((s as any).attendance_count || 0), 0);
-        const participations = memberAttendance.filter(a => closedRealRachaIds.includes(a.racha_id)).length + manualGames;
+
+        const memberAttendanceCount = memberAttendance.filter(a => closedRealRachaIds.includes(a.racha_id)).length;
+        const participations = memberAttendanceCount + manualGames;
 
         // Destaques: Automático (Rachas Fechados) + Soma de Ajustes Manuais
         const manualTop1 = manualAdjustments.reduce((sum, s) => sum + ((s as any).top1_count || 0), 0);
