@@ -176,48 +176,63 @@ export default async function CampeonatoDetalhesPage({ params }: { params: Promi
 
                 {/* Standings */}
                 {showStandings && standings.length > 0 && (
-                    <Card className="mb-8 overflow-hidden border-none shadow-xl rounded-2xl bg-gray-900 text-white">
-                        <CardHeader className="bg-black/20 border-b border-white/10">
-                            <CardTitle className="text-lg">📊 {championship.format === 'bracket' ? 'Classificação — Fase de Grupos' : 'Classificação'}</CardTitle>
+                    <Card className="mb-8 overflow-hidden border border-gray-100 shadow-xl rounded-2xl bg-white text-slate-900">
+                        <CardHeader className="bg-gray-50/80 border-b border-gray-100 py-3 px-4">
+                            <CardTitle className="text-base font-bold flex items-center gap-2 text-gray-800">
+                                <Trophy className="w-4 h-4 text-yellow-500" />
+                                {championship.format === 'bracket' ? 'Classificação — Fase de Grupos' : 'Classificação'}
+                            </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-0 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20">
-                            <div className="min-w-[600px]">
+                        <CardContent className="p-0 overflow-x-auto md:overflow-x-visible">
+                            <div className="w-full">
                                 <Table>
-                                    <TableHeader className="bg-white/5">
-                                        <TableRow className="border-white/10 hover:bg-transparent">
-                                            <TableHead className="w-16 text-center font-bold text-gray-300">Pos</TableHead>
-                                            <TableHead className="font-bold text-gray-300">Time</TableHead>
-                                            <TableHead className="text-center font-bold text-gray-300">PTS</TableHead>
-                                            <TableHead className="text-center font-medium text-gray-400 uppercase text-[10px]">PJ</TableHead>
-                                            <TableHead className="text-center font-medium text-gray-400 uppercase text-[10px]">V</TableHead>
-                                            <TableHead className="text-center font-medium hidden sm:table-cell text-gray-400 uppercase text-[10px]">E</TableHead>
-                                            <TableHead className="text-center font-medium hidden sm:table-cell text-gray-400 uppercase text-[10px]">D</TableHead>
-                                            <TableHead className="text-center font-medium text-gray-400 uppercase text-[10px]">SG</TableHead>
+                                    <TableHeader className="bg-white border-b border-gray-50">
+                                        <TableRow className="hover:bg-transparent border-none">
+                                            <TableHead className="w-10 text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1">Pos</TableHead>
+                                            <TableHead className="font-bold text-gray-400 text-[10px] uppercase py-2 px-2">Time</TableHead>
+                                            <TableHead className="text-center font-black text-gray-900 text-[10px] uppercase py-2 px-1">Pts</TableHead>
+                                            <TableHead className="text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1">PJ</TableHead>
+                                            <TableHead className="text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1">V</TableHead>
+                                            <TableHead className="text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1">E</TableHead>
+                                            <TableHead className="text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1">D</TableHead>
+                                            <TableHead className="text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1 pr-4">SG</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {standings.map((team, idx) => (
-                                            <TableRow key={team.id} className={`border-white/5 hover:bg-white/5 transition-colors ${idx < 4 ? 'bg-white/5 font-medium' : ''}`}>
-                                                <TableCell className="text-center">
-                                                    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black ${idx === 0 ? 'bg-yellow-500 text-black' :
-                                                        idx === 1 ? 'bg-gray-400 text-black' :
-                                                            idx === 2 ? 'bg-amber-600 text-white' : 'text-gray-500'
-                                                        }`}>
+                                            <TableRow key={team.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors">
+                                                <TableCell className="text-center py-3 px-1">
+                                                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-black 
+                                                        ${idx === 0 ? 'bg-yellow-400 text-yellow-900 shadow-sm' :
+                                                            idx === 1 ? 'bg-gray-200 text-gray-600' :
+                                                                idx === 2 ? 'bg-orange-100 text-orange-700' :
+                                                                    'text-gray-400 font-medium'}
+                                                    `}>
                                                         {idx + 1}
                                                     </span>
                                                 </TableCell>
-                                                <TableCell className="font-bold text-gray-100">
-                                                    <div className="flex items-center gap-3">
-                                                        {team.logo_url && <img src={team.logo_url} className="w-8 h-8 object-contain shadow-sm" alt="" />}
-                                                        {team.name}
+                                                <TableCell className="font-bold text-gray-800 text-sm py-3 px-2">
+                                                    <div className="flex items-center gap-2">
+                                                        {team.logo_url ? (
+                                                            <div className="relative w-6 h-6 shrink-0">
+                                                                <Image src={team.logo_url} alt="" fill className="object-contain" />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="w-6 h-6 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[8px] text-gray-300 font-bold shrink-0">?</div>
+                                                        )}
+                                                        <span className="truncate max-w-[80px] sm:max-w-none">{team.name}</span>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-center font-black text-yellow-500 text-lg">{team.points}</TableCell>
-                                                <TableCell className="text-center text-gray-300">{team.played}</TableCell>
-                                                <TableCell className="text-center text-gray-300">{team.wins}</TableCell>
-                                                <TableCell className="text-center hidden sm:table-cell text-gray-500">{team.draws}</TableCell>
-                                                <TableCell className="text-center hidden sm:table-cell text-gray-500">{team.losses}</TableCell>
-                                                <TableCell className="text-center font-semibold text-gray-300">{team.goalDiff}</TableCell>
+                                                <TableCell className="text-center font-black text-slate-900 text-sm py-3 px-1">{team.points}</TableCell>
+                                                <TableCell className="text-center text-gray-500 text-[11px] py-3 px-1">{team.played}</TableCell>
+                                                <TableCell className="text-center text-gray-500 text-[11px] py-3 px-1 font-medium">{team.wins}</TableCell>
+                                                <TableCell className="text-center text-gray-400 text-[11px] py-3 px-1">{team.draws}</TableCell>
+                                                <TableCell className="text-center text-gray-400 text-[11px] py-3 px-1">{team.losses}</TableCell>
+                                                <TableCell className="text-center font-bold text-gray-400 text-[11px] py-3 px-1 pr-4">
+                                                    <span className={team.goalDiff > 0 ? 'text-emerald-600' : team.goalDiff < 0 ? 'text-red-500' : ''}>
+                                                        {team.goalDiff > 0 ? `+${team.goalDiff}` : team.goalDiff}
+                                                    </span>
+                                                </TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
