@@ -37,27 +37,32 @@ interface MatchClientProps {
     teamB: Team;
     initialStats: MatchStats[];
     isAdmin: boolean;
+    championshipFormat?: string;
 }
 
 // Mapping: from bracket_position → which next match and which slot (team_a or team_b)
-function getNextBracketInfo(bracketPosition: string): { nextPosition: string; slot: 'team_a_id' | 'team_b_id' } | null {
-    // Quartas → Semifinais
-    // qf-1 winner → semi-1 team_a
-    // qf-2 winner → semi-1 team_b
-    // qf-3 winner → semi-2 team_a
-    // qf-4 winner → semi-2 team_b
-    if (bracketPosition === 'qf-1') return { nextPosition: 'semi-1', slot: 'team_a_id' };
-    if (bracketPosition === 'qf-2') return { nextPosition: 'semi-1', slot: 'team_b_id' };
+function getNextBracketInfo(bracketPosition: string, format?: string): { nextPosition: string; slot: 'team_a_id' | 'team_b_id' } | null {
+    const is6Teams = format === 'tournament_6_teams';
+
+    if (bracketPosition === 'qf-1') {
+        return {
+            nextPosition: is6Teams ? 'semi-2' : 'semi-1',
+            slot: is6Teams ? 'team_b_id' : 'team_a_id'
+        };
+    }
+    if (bracketPosition === 'qf-2') {
+        return {
+            nextPosition: is6Teams ? 'semi-1' : 'semi-1',
+            slot: 'team_b_id'
+        };
+    }
     if (bracketPosition === 'qf-3') return { nextPosition: 'semi-2', slot: 'team_a_id' };
     if (bracketPosition === 'qf-4') return { nextPosition: 'semi-2', slot: 'team_b_id' };
 
     // Semifinais → Final
-    // semi-1 winner → final-1 team_a
-    // semi-2 winner → final-1 team_b
     if (bracketPosition === 'semi-1') return { nextPosition: 'final-1', slot: 'team_a_id' };
     if (bracketPosition === 'semi-2') return { nextPosition: 'final-1', slot: 'team_b_id' };
 
-    // Final → nenhum próximo
     return null;
 }
 
@@ -68,7 +73,7 @@ function getBracketLabel(pos: string): string {
     return '';
 }
 
-export default function MatchClient({ matchId, campId, initialMatch, teamA, teamB, initialStats, isAdmin }: MatchClientProps) {
+export default function MatchClient({ matchId, campId, initialMatch, teamA, teamB, initialStats, isAdmin, championshipFormat }: MatchClientProps) {
     const [match, setMatch] = useState(initialMatch);
     const [stats, setStats] = useState<MatchStats[]>(initialStats);
     const [loading, setLoading] = useState(false);
@@ -174,7 +179,7 @@ export default function MatchClient({ matchId, campId, initialMatch, teamA, team
         if (!isAdmin || !isBracketMatch) return;
 
         const bracketPos = match.bracket_position;
-        const nextInfo = getNextBracketInfo(bracketPos);
+        const nextInfo = getNextBracketInfo(bracketPos, championshipFormat);
 
         if (!nextInfo) {
             // É a final - apenas encerrar o jogo
@@ -296,15 +301,25 @@ export default function MatchClient({ matchId, campId, initialMatch, teamA, team
                                     <TableCell className="text-center">
                                         <div className="flex items-center justify-center gap-2">
                                             {isAdmin && match.status !== 'completed' ? (
-                                                <>
-                                                    <button onClick={() => handleStatUpdate(player.id, team.id, 'yellow_cards', 1)} className={`w-4 h-6 rounded-sm border ${pStats.yellow_cards > 0 ? 'bg-yellow-400 border-yellow-500' : 'bg-transparent border-gray-300 hover:border-yellow-400'}`} title="Cartão Amarelo" />
-                                                    <button onClick={() => handleStatUpdate(player.id, team.id, 'red_cards', 1)} className={`w-4 h-6 rounded-sm border ${pStats.red_cards > 0 ? 'bg-red-500 border-red-600' : 'bg-transparent border-gray-300 hover:border-red-500'}`} title="Cartão Vermelho" />
-                                                </>
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-1">
+                                                        <button onClick={() => handleStatUpdate(player.id, team.id, 'yellow_cards', -1)} className="text-gray-300 hover:text-red-500" disabled={pStats.yellow_cards <= 0}><Minus size={10} /></button>
+                                                        <div className={`w-4 h-6 rounded-sm border ${pStats.yellow_cards > 0 ? 'bg-yellow-400 border-yellow-500' : 'bg-transparent border-gray-300'}`} title="Amarelo" />
+                                                        <button onClick={() => handleStatUpdate(player.id, team.id, 'yellow_cards', 1)} className="text-gray-300 hover:text-green-500"><Plus size={10} /></button>
+                                                        <span className="text-[10px] font-bold min-w-[12px]">{pStats.yellow_cards}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <button onClick={() => handleStatUpdate(player.id, team.id, 'red_cards', -1)} className="text-gray-300 hover:text-red-500" disabled={pStats.red_cards <= 0}><Minus size={10} /></button>
+                                                        <div className={`w-4 h-6 rounded-sm border ${pStats.red_cards > 0 ? 'bg-red-500 border-red-600' : 'bg-transparent border-gray-300'}`} title="Vermelho" />
+                                                        <button onClick={() => handleStatUpdate(player.id, team.id, 'red_cards', 1)} className="text-gray-300 hover:text-green-500"><Plus size={10} /></button>
+                                                        <span className="text-[10px] font-bold min-w-[12px]">{pStats.red_cards}</span>
+                                                    </div>
+                                                </div>
                                             ) : (
-                                                <>
-                                                    {pStats.yellow_cards > 0 && <div className="w-3 h-4 bg-yellow-400 rounded-sm" title="Amarelo" />}
-                                                    {pStats.red_cards > 0 && <div className="w-3 h-4 bg-red-500 rounded-sm" title="Vermelho" />}
-                                                </>
+                                                <div className="flex gap-2">
+                                                    {pStats.yellow_cards > 0 && <div className="flex items-center gap-1"><div className="w-3 h-4 bg-yellow-400 rounded-sm" /> <span className="text-[10px] font-bold">{pStats.yellow_cards}</span></div>}
+                                                    {pStats.red_cards > 0 && <div className="flex items-center gap-1"><div className="w-3 h-4 bg-red-500 rounded-sm" /> <span className="text-[10px] font-bold">{pStats.red_cards}</span></div>}
+                                                </div>
                                             )}
                                         </div>
                                     </TableCell>
@@ -346,10 +361,17 @@ export default function MatchClient({ matchId, campId, initialMatch, teamA, team
                         </div>
 
                         {/* Placar Central */}
-                        <div className="flex items-center gap-6">
-                            <span className="text-6xl md:text-8xl font-bold font-mono">{match.score_a || 0}</span>
-                            <span className="text-4xl text-blue-300">X</span>
-                            <span className="text-6xl md:text-8xl font-bold font-mono">{match.score_b || 0}</span>
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="flex items-center gap-6">
+                                <span className="text-6xl md:text-8xl font-bold font-mono">{match.score_a || 0}</span>
+                                <span className="text-4xl text-blue-300">X</span>
+                                <span className="text-6xl md:text-8xl font-bold font-mono">{match.score_b || 0}</span>
+                            </div>
+                            {match.score_a === match.score_b && (match.penalties_score_a > 0 || match.penalties_score_b > 0) && (
+                                <div className="mt-2 text-amber-400 font-bold bg-black/30 px-4 py-1 rounded-full border border-amber-400/30">
+                                    Pênaltis: {match.penalties_score_a} - {match.penalties_score_b}
+                                </div>
+                            )}
                         </div>
 
                         {/* Time B */}

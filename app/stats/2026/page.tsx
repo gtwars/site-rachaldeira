@@ -28,11 +28,6 @@ export default async function Stats2026Page() {
         .select('*')
         .in('racha_id', allRachaIds);
 
-    // Buscar estatísticas de campeonatos
-    const { data: championshipStats } = await supabase
-        .from('match_player_stats')
-        .select('*');
-
     // Buscar confirmações de presença (apenas de rachas normais do ano)
     const normalRachaIds = allRachas?.filter(r => r.location !== 'Sistema (Manual)').map(r => r.id) || [];
     const { data: attendance } = await supabase
@@ -49,10 +44,10 @@ export default async function Stats2026Page() {
         const adjustmentRachaIds = allRachas?.filter(r => r.location === 'Sistema (Manual)' || r.name === 'Ajustes Globais Manuais').map(r => r.id) || [];
         const manualAdjustments = memberRachaScouts.filter(s => adjustmentRachaIds.includes(s.racha_id));
 
-        const goals = memberRachaScouts.reduce((sum, s) => sum + (s.goals || 0), 0);
-        const assists = memberRachaScouts.reduce((sum, s) => sum + (s.assists || 0), 0);
-        const saves = memberRachaScouts.reduce((sum, s) => sum + (s.difficult_saves || 0), 0);
-        const warnings = memberRachaScouts.reduce((sum, s) => sum + (s.warnings || 0), 0);
+        const goals = (memberRachaScouts.reduce((sum, s) => sum + (s.goals || 0), 0));
+        const assists = (memberRachaScouts.reduce((sum, s) => sum + (s.assists || 0), 0));
+        const saves = (memberRachaScouts.reduce((sum, s) => sum + (s.difficult_saves || 0), 0));
+        const warnings = (memberRachaScouts.reduce((sum, s) => sum + (s.warnings || 0), 0));
 
         // Jogos: Apenas Rachas ENCERRADOS (reais) que o jogador tem presença "in" + Soma de Ajustes Manuais
         const closedRealRachaIds = allRachas?.filter(r => r.status === 'closed' && !adjustmentRachaIds.includes(r.id)).map(r => r.id) || [];

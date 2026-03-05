@@ -115,6 +115,35 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
         setLoading(false);
     };
 
+    const handleUpdateStatus = async (newStatus: 'not_started' | 'in_progress' | 'completed') => {
+        const confirmMsg = newStatus === 'completed'
+            ? 'Deseja finalizar o campeonato? Isso impedirá novas alterações.'
+            : newStatus === 'in_progress'
+                ? 'Deseja iniciar/reabrir o campeonato?'
+                : 'Deseja marcar como não iniciado?';
+
+        if (!confirm(confirmMsg)) return;
+
+        setSaving(true);
+        try {
+            const supabase = createClient();
+            const { error } = await supabase
+                .from('championships')
+                .update({ status: newStatus })
+                .eq('id', campId);
+
+            if (error) throw error;
+            loadData();
+            if (newStatus === 'completed') {
+                router.push('/admin/campeonatos');
+            }
+        } catch (err: any) {
+            alert('Erro ao atualizar status: ' + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleSaveHighlights = async () => {
         setSaving(true);
         try {
@@ -170,6 +199,7 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
                     championship_id: campId,
                     name: teamForm.name,
                     logo_url: logoUrl,
+                    group: (championship.format === 'tournament_6_teams' ? 'A' : null),
                 });
 
             if (insertError) throw insertError;
@@ -209,6 +239,16 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
         }
     };
 
+    const handleUpdateTeamGroup = async (teamId: string, group: string) => {
+        try {
+            const supabase = createClient();
+            await supabase.from('teams').update({ group }).eq('id', teamId);
+            loadData();
+        } catch (err: any) {
+            alert('Erro ao atualizar grupo: ' + err.message);
+        }
+    };
+
     const handleRemovePlayer = async (teamId: string, memberId: string) => {
         if (!confirm('Remover jogador?')) return;
         const supabase = createClient();
@@ -218,53 +258,116 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
 
     const handleGenerateKnockout = async () => {
         setSaving(true);
-        if (selectedQualifiers.length !== 6) {
-            setError('Selecione exatamente 6 times (1º e 2º vão direto para Semis)');
-            setSaving(false);
-            return;
-        }
+        setError('');
+        const is6Teams = championship.format === 'tournament_6_teams';
 
         try {
             const supabase = createClient();
-            const matchesToInsert: any[] = [
-                {
-                    championship_id: campId,
-                    bracket_position: 'qf-1',
-                    team_a_id: selectedQualifiers[3], // 4º colocado
-                    team_b_id: selectedQualifiers[4], // 5º colocado
-                    status: 'scheduled',
-                },
-                {
-                    championship_id: campId,
-                    bracket_position: 'qf-2',
-                    team_a_id: selectedQualifiers[2], // 3º colocado
-                    team_b_id: selectedQualifiers[5], // 6º colocado
-                    status: 'scheduled',
-                },
-                {
-                    championship_id: campId,
-                    bracket_position: 'semi-1',
-                    team_a_id: selectedQualifiers[0], // 1º colocado direto
-                    status: 'scheduled',
-                },
-                {
-                    championship_id: campId,
-                    bracket_position: 'semi-2',
-                    team_a_id: selectedQualifiers[1], // 2º colocado direto
-                    status: 'scheduled',
-                },
-                {
-                    championship_id: campId,
-                    bracket_position: 'final-1',
-                    status: 'scheduled',
+            let matchesToInsert: any[] = [];
+            let qualifiers: string[] = [];
+
+            if (is6Teams) {
+                // Cálculo Automático da Classificação
+                const stats = teams.map(team => {
+                    let pts = 0, wins = 0, gf = 0, ga = 0, played = 0;
+                    const groupMatches = matches.filter(m =>
+                        m.status === 'completed' &&
+                        !m.bracket_position &&
+                        (m.team_a_id === team.id || m.team_b_id === team.id)
+                    );
+
+                    groupMatches.forEach(m => {
+                        played++;
+                        const isTeamA = m.team_a_id === team.id;
+                        const ownScore = isTeamA ? m.score_a : m.score_b;
+                        const oppScore = isTeamA ? m.score_b : m.score_a;
+                        gf += ownScore;
+                        ga += oppScore;
+
+                        if (ownScore > oppScore) {
+                            pts += 3; wins++;
+                        } else if (ownScore === oppScore) {
+                            pts += 1;
+                            // Ponto extra por pênaltis
+                            if (m.penalty_winner_id === team.id) pts += 1;
+                        }
+                    });
+
+                    return { id: team.id, group: team.group || 'A', pts, wins, gd: gf - ga, gf, played };
+                });
+
+                const groupA = stats.filter(s => s.group === 'A').sort((a, b) => b.pts - a.pts || b.wins - a.wins || b.gd - a.gd || b.gf - a.gf);
+                const groupB = stats.filter(s => s.group === 'B').sort((a, b) => b.pts - a.pts || b.wins - a.wins || b.gd - a.gd || b.gf - a.gf);
+
+                if (groupA.length < 3 || groupB.length < 3) {
+                    throw new Error('Certifique-se de que os times estão nos grupos A e B corretamente.');
                 }
-            ];
+
+                // Ordem: 1A, 2A, 3A, 1B, 2B, 3B
+                qualifiers = [groupA[0].id, groupA[1].id, groupA[2].id, groupB[0].id, groupB[1].id, groupB[2].id];
+
+                const [t1A, t2A, t3A, t1B, t2B, t3B] = qualifiers;
+
+                matchesToInsert = [
+                    {
+                        championship_id: campId,
+                        bracket_position: 'qf-1',
+                        team_a_id: t2A,
+                        team_b_id: t3B,
+                        has_draw_advantage: true,
+                        status: 'scheduled',
+                    },
+                    {
+                        championship_id: campId,
+                        bracket_position: 'qf-2',
+                        team_a_id: t2B,
+                        team_b_id: t3A,
+                        has_draw_advantage: true,
+                        status: 'scheduled',
+                    },
+                    {
+                        championship_id: campId,
+                        bracket_position: 'semi-1',
+                        team_a_id: t1A,
+                        status: 'scheduled',
+                    },
+                    {
+                        championship_id: campId,
+                        bracket_position: 'semi-2',
+                        team_a_id: t1B,
+                        status: 'scheduled',
+                    },
+                    {
+                        championship_id: campId,
+                        bracket_position: 'final-1',
+                        status: 'scheduled',
+                    }
+                ];
+            } else {
+                // Lógica manual para outros formatos
+                if (selectedQualifiers.length !== 6) {
+                    setError(`Selecione exatamente 6 times na ordem correta`);
+                    setSaving(false);
+                    return;
+                }
+                qualifiers = selectedQualifiers;
+                // ... (Lógica original simplificada para o replace)
+                matchesToInsert = [
+                    { championship_id: campId, bracket_position: 'qf-1', team_a_id: qualifiers[3], team_b_id: qualifiers[4], status: 'scheduled' },
+                    { championship_id: campId, bracket_position: 'qf-2', team_a_id: qualifiers[2], team_b_id: qualifiers[5], status: 'scheduled' },
+                    { championship_id: campId, bracket_position: 'semi-1', team_a_id: qualifiers[0], status: 'scheduled' },
+                    { championship_id: campId, bracket_position: 'semi-2', team_a_id: qualifiers[1], status: 'scheduled' },
+                    { championship_id: campId, bracket_position: 'final-1', status: 'scheduled' }
+                ];
+            }
 
             await supabase.from('championship_matches').insert(matchesToInsert);
             setIsBracketModalOpen(false);
             setSelectedQualifiers([]);
             loadData();
+            alert('Mata-mata gerado com sucesso!');
         } catch (err: any) {
+            alert('Erro ao gerar mata-mata: ' + err.message);
             setError(err.message);
         } finally {
             setSaving(false);
@@ -280,7 +383,25 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
             const supabase = createClient();
             let generated: any[] = [];
 
-            if (championship.format === 'bracket') {
+            if (championship.format === 'tournament_6_teams') {
+                const groupA = teams.filter(t => t.group === 'A' || !t.group); // Default to A if not set
+                const groupB = teams.filter(t => t.group === 'B');
+
+                if (groupA.length !== 3 || groupB.length !== 3) {
+                    return alert('É necessário ter exatamente 3 times no Grupo A e 3 times no Grupo B');
+                }
+
+                // Grupo A
+                generated.push({ championship_id: campId, round: 1, team_a_id: groupA[0].id, team_b_id: groupA[1].id, status: 'scheduled' });
+                generated.push({ championship_id: campId, round: 2, team_a_id: groupA[0].id, team_b_id: groupA[2].id, status: 'scheduled' });
+                generated.push({ championship_id: campId, round: 3, team_a_id: groupA[1].id, team_b_id: groupA[2].id, status: 'scheduled' });
+
+                // Grupo B
+                generated.push({ championship_id: campId, round: 1, team_a_id: groupB[0].id, team_b_id: groupB[1].id, status: 'scheduled' });
+                generated.push({ championship_id: campId, round: 2, team_a_id: groupB[0].id, team_b_id: groupB[2].id, status: 'scheduled' });
+                generated.push({ championship_id: campId, round: 3, team_a_id: groupB[1].id, team_b_id: groupB[2].id, status: 'scheduled' });
+
+            } else if (championship.format === 'bracket') {
                 const shuffled = [...teams].sort(() => 0.5 - Math.random());
                 const chunk = shuffled.length < 6 ? shuffled.length : 4;
                 for (let i = 0; i < shuffled.length; i += chunk) {
@@ -384,18 +505,49 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
                     </div>
 
                     <div className="flex gap-2 flex-wrap">
+                        {/* Status Management */}
+                        {championship.status === 'not_started' && (
+                            <Button onClick={() => handleUpdateStatus('in_progress')} disabled={saving} className="bg-green-600 hover:bg-green-700">
+                                <Play size={16} className="mr-2" /> Iniciar Campeonato
+                            </Button>
+                        )}
+
+                        {championship.status === 'in_progress' && (
+                            <Button variant="danger" onClick={() => handleUpdateStatus('completed')} disabled={saving}>
+                                <CheckCircle size={16} className="mr-2" /> Finalizar Campeonato
+                            </Button>
+                        )}
+
+                        {championship.status === 'completed' && (
+                            <Button variant="outline" onClick={() => handleUpdateStatus('in_progress')} disabled={saving}>
+                                <Play size={16} className="mr-2" /> Reabrir Campeonato
+                            </Button>
+                        )}
+
+                        <div className="w-px h-8 bg-gray-200 mx-2 hidden md:block" />
+
                         <Button variant="outline" onClick={() => setIsManualMatchModalOpen(true)}>
                             <Plus size={16} className="mr-2" /> Partida Manual
                         </Button>
+
                         {championship.status === 'not_started' && teams.length >= 2 && (
-                            <Button onClick={handleGenerateMatches} disabled={saving}><Play size={16} className="mr-2" /> Gerar Automático</Button>
+                            <Button onClick={handleGenerateMatches} disabled={saving} variant="secondary">
+                                <Play size={16} className="mr-2" /> Gerar Partidas Aut.
+                            </Button>
                         )}
+
                         {championship.status === 'in_progress' && (
-                            <>
-                                <Button onClick={() => setIsBracketModalOpen(true)}><Trophy size={16} className="mr-2" /> Mata-Mata</Button>
-                                <Button variant="secondary" onClick={() => { if (confirm('Finalizar?')) createClient().from('championships').update({ status: 'completed' }).eq('id', campId).then(() => router.push('/admin/campeonatos')); }}><CheckCircle size={16} className="mr-2" /> Finalizar</Button>
-                            </>
+                            <Button onClick={() => {
+                                if (championship.format === 'tournament_6_teams') {
+                                    if (confirm('Deseja calcular a classificação e gerar o mata-mata automaticamente?')) {
+                                        handleGenerateKnockout();
+                                    }
+                                } else {
+                                    setIsBracketModalOpen(true);
+                                }
+                            }}><Trophy size={16} className="mr-2" /> Gerar Mata-Mata</Button>
                         )}
+
                         <Button variant="secondary" onClick={() => router.push('/admin/campeonatos')}>Voltar</Button>
                     </div>
                 </div>
@@ -570,7 +722,18 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
                                     <div key={t.id} className="p-3 bg-gray-50 rounded-lg border">
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="font-bold truncate">{t.name}</span>
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-2 items-center">
+                                                {championship.format === 'tournament_6_teams' && (
+                                                    <Select value={t.group || 'A'} onValueChange={(v) => handleUpdateTeamGroup(t.id, v)}>
+                                                        <SelectTrigger className="h-8 w-24">
+                                                            <SelectValue placeholder="Grupo" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="A">Grupo A</SelectItem>
+                                                            <SelectItem value="B">Grupo B</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
                                                 <Button size="sm" variant="outline" className="h-8 w-8 p-0" title="Gerenciar Jogadores" onClick={() => { setSelectedTeam(t); setIsPlayerModalOpen(true); }}>
                                                     <Users size={16} />
                                                 </Button>
@@ -654,7 +817,11 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
 
                 <Modal isOpen={isBracketModalOpen} onClose={() => setIsBracketModalOpen(false)} title="Gerar Mata-Mata" footer={<Button onClick={handleGenerateKnockout} disabled={saving}>Gerar</Button>}>
                     <div className="space-y-4">
-                        <p className="text-sm">Selecione 6 times na ordem de classificação (1º ao 6º):</p>
+                        <p className="text-sm">
+                            {championship.format === 'tournament_6_teams'
+                                ? 'Selecione os 6 times na ordem exata: 1ºA, 2ºA, 3ºA, 1ºB, 2ºB, 3ºB'
+                                : 'Selecione 6 times na ordem de classificação (1º ao 6º)'}
+                        </p>
                         <div className="max-h-60 overflow-y-auto space-y-1">
                             {teams.map(t => (
                                 <label key={t.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">

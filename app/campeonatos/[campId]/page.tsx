@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { Trophy, Calendar, Star, Shield, HandMetal, Beer, Crosshair } from 'lucide-react';
+import { Trophy, Calendar, Star, Shield, HandMetal, Beer, Crosshair, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -41,7 +41,7 @@ export default async function CampeonatoDetalhesPage({ params }: { params: Promi
         .select(`
             *,
             team_members (
-                members (name)
+                members (id, name, photo_url, position)
             )
         `)
         .eq('championship_id', campId);
@@ -50,6 +50,8 @@ export default async function CampeonatoDetalhesPage({ params }: { params: Promi
         .from('championship_matches')
         .select(`
             *,
+            team_a_id,
+            team_b_id,
             team_a:team_a_id (name, logo_url),
             team_b:team_b_id (name, logo_url)
         `)
@@ -58,14 +60,15 @@ export default async function CampeonatoDetalhesPage({ params }: { params: Promi
 
     // Calcular classificação
     let standings: any[] = [];
-    const groupMatches = matches?.filter(m => m.round && !m.bracket_position) || [];
-    const showStandings = (championship.format === 'round_robin' || (championship.format === 'bracket' && groupMatches.length > 0));
+    const groupMatches = matches?.filter(m => !m.bracket_position) || [];
+    const is6Teams = championship.format === 'tournament_6_teams';
+    const showStandings = (championship.format === 'round_robin' || (is6Teams && groupMatches.length > 0) || (championship.format === 'bracket' && groupMatches.length > 0));
 
     if (showStandings && teams) {
         standings = teams.map(team => {
-            const teamMatches = groupMatches.filter(m =>
+            const teamMatches = matches?.filter(m =>
                 (m.team_a_id === team.id || m.team_b_id === team.id) && m.status === 'completed'
-            );
+            ) || [];
 
             let points = 0;
             let wins = 0;
@@ -76,16 +79,20 @@ export default async function CampeonatoDetalhesPage({ params }: { params: Promi
 
             teamMatches.forEach(match => {
                 const isTeamA = match.team_a_id === team.id;
-                const ownScore = isTeamA ? match.score_a : match.score_b;
-                const oppScore = isTeamA ? match.score_b : match.score_a;
+                const ownScore = Number(isTeamA ? match.score_a : match.score_b) || 0;
+                const oppScore = Number(isTeamA ? match.score_b : match.score_a) || 0;
 
-                goalsFor += ownScore || 0;
-                goalsAgainst += oppScore || 0;
+                goalsFor += ownScore;
+                goalsAgainst += oppScore;
 
                 if (ownScore > oppScore) {
                     points += 3; wins++;
                 } else if (ownScore === oppScore) {
                     points += 1; draws++;
+                    // Ponto extra por pênaltis no torneio de 6 equipes
+                    if (is6Teams && match.penalty_winner_id === team.id) {
+                        points += 1;
+                    }
                 } else {
                     losses++;
                 }
@@ -99,11 +106,17 @@ export default async function CampeonatoDetalhesPage({ params }: { params: Promi
                 goalsFor, goalsAgainst,
                 goalDiff: goalsFor - goalsAgainst,
             };
-        }).sort((a, b) => {
-            if (b.points !== a.points) return b.points - a.points;
-            if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
-            return b.goalsFor - a.goalsFor;
         });
+
+        if (is6Teams) {
+            // Sort will happen later when splitting into groups
+        } else {
+            standings.sort((a, b) => {
+                if (b.points !== a.points) return b.points - a.points;
+                if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
+                return b.goalsFor - a.goalsFor;
+            });
+        }
     }
 
     const highlightCards = [
@@ -176,74 +189,48 @@ export default async function CampeonatoDetalhesPage({ params }: { params: Promi
 
                 {/* Standings */}
                 {showStandings && standings.length > 0 && (
-                    <Card className="mb-8 overflow-hidden border border-gray-100 shadow-xl rounded-2xl bg-white text-slate-900">
-                        <CardHeader className="bg-gray-50/80 border-b border-gray-100 py-3 px-4">
-                            <CardTitle className="text-base font-bold flex items-center gap-2 text-gray-800">
-                                <Trophy className="w-4 h-4 text-yellow-500" />
-                                {championship.format === 'bracket' ? 'Classificação — Fase de Grupos' : 'Classificação'}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0 overflow-x-auto md:overflow-x-visible">
-                            <div className="w-full">
-                                <Table>
-                                    <TableHeader className="bg-white border-b border-gray-50">
-                                        <TableRow className="hover:bg-transparent border-none">
-                                            <TableHead className="w-10 text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1">Pos</TableHead>
-                                            <TableHead className="font-bold text-gray-400 text-[10px] uppercase py-2 px-2">Time</TableHead>
-                                            <TableHead className="text-center font-black text-gray-900 text-[10px] uppercase py-2 px-1">Pts</TableHead>
-                                            <TableHead className="text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1">PJ</TableHead>
-                                            <TableHead className="text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1">V</TableHead>
-                                            <TableHead className="text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1">E</TableHead>
-                                            <TableHead className="text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1">D</TableHead>
-                                            <TableHead className="text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1 pr-4">SG</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {standings.map((team, idx) => (
-                                            <TableRow key={team.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors">
-                                                <TableCell className="text-center py-3 px-1">
-                                                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-black 
-                                                        ${idx === 0 ? 'bg-yellow-400 text-yellow-900 shadow-sm' :
-                                                            idx === 1 ? 'bg-gray-200 text-gray-600' :
-                                                                idx === 2 ? 'bg-orange-100 text-orange-700' :
-                                                                    'text-gray-400 font-medium'}
-                                                    `}>
-                                                        {idx + 1}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell className="font-bold text-gray-800 text-sm py-3 px-2">
-                                                    <div className="flex items-center gap-2">
-                                                        {team.logo_url ? (
-                                                            <div className="relative w-6 h-6 shrink-0">
-                                                                <Image src={team.logo_url} alt="" fill className="object-contain" />
-                                                            </div>
-                                                        ) : (
-                                                            <div className="w-6 h-6 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[8px] text-gray-300 font-bold shrink-0">?</div>
-                                                        )}
-                                                        <span className="truncate max-w-[80px] sm:max-w-none">{team.name}</span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-center font-black text-slate-900 text-sm py-3 px-1">{team.points}</TableCell>
-                                                <TableCell className="text-center text-gray-500 text-[11px] py-3 px-1">{team.played}</TableCell>
-                                                <TableCell className="text-center text-gray-500 text-[11px] py-3 px-1 font-medium">{team.wins}</TableCell>
-                                                <TableCell className="text-center text-gray-400 text-[11px] py-3 px-1">{team.draws}</TableCell>
-                                                <TableCell className="text-center text-gray-400 text-[11px] py-3 px-1">{team.losses}</TableCell>
-                                                <TableCell className="text-center font-bold text-gray-400 text-[11px] py-3 px-1 pr-4">
-                                                    <span className={team.goalDiff > 0 ? 'text-emerald-600' : team.goalDiff < 0 ? 'text-red-500' : ''}>
-                                                        {team.goalDiff > 0 ? `+${team.goalDiff}` : team.goalDiff}
-                                                    </span>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                    <>
+                        {/* Se houver grupos definidos, mostramos lado a lado */}
+                        {standings.some(t => t.group) ? (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                                <StandingsTable
+                                    title="Grupo A"
+                                    teams={standings
+                                        .filter(t => t.group === 'A' || !t.group)
+                                        .sort((a, b) => {
+                                            if (b.points !== a.points) return b.points - a.points;
+                                            if (b.wins !== a.wins) return b.wins - a.wins;
+                                            if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
+                                            return b.goalsFor - a.goalsFor;
+                                        })
+                                    }
+                                />
+                                <StandingsTable
+                                    title="Grupo B"
+                                    teams={standings
+                                        .filter(t => t.group === 'B')
+                                        .sort((a, b) => {
+                                            if (b.points !== a.points) return b.points - a.points;
+                                            if (b.wins !== a.wins) return b.wins - a.wins;
+                                            if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
+                                            return b.goalsFor - a.goalsFor;
+                                        })
+                                    }
+                                />
                             </div>
-                        </CardContent>
-                    </Card>
+                        ) : (
+                            <div className="mb-12">
+                                <StandingsTable
+                                    title={championship.format === 'bracket' ? 'Classificação — Fase de Grupos' : 'Classificação'}
+                                    teams={standings}
+                                />
+                            </div>
+                        )}
+                    </>
                 )}
 
                 {/* Bracket */}
-                {championship.format === 'bracket' && (
+                {(championship.format === 'bracket' || is6Teams) && (
                     <div className="mb-12">
                         <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                             🔥 Fase Mata-Mata
@@ -309,7 +296,143 @@ export default async function CampeonatoDetalhesPage({ params }: { params: Promi
                         </div>
                     </div>
                 )}
+                {/* Teams Lineup */}
+                {teams && teams.length > 0 && (
+                    <div className="mt-20 space-y-10">
+                        <div className="flex flex-col items-center justify-center text-center">
+                            <h2 className="text-3xl font-black text-gray-900 flex items-center gap-3">
+                                <Shield className="text-blue-600" size={32} />
+                                Elencos das Equipes
+                            </h2>
+                            <div className="h-1.5 w-24 bg-blue-600 rounded-full mt-3" />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {teams.map(team => (
+                                <TeamLineup key={team.id} team={team} />
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </main>
+    );
+}
+
+function TeamLineup({ team }: { team: any }) {
+    const players = team.team_members?.map((tm: any) => tm.members).filter(Boolean) || [];
+
+    return (
+        <Card className="overflow-hidden border-none shadow-xl bg-white rounded-3xl transition-transform hover:scale-[1.01]">
+            <div className="relative h-24 bg-gradient-to-r from-blue-700 to-blue-900 flex items-center px-8 overflow-hidden">
+                <div className="absolute right-[-20px] top-[-20px] opacity-10">
+                    <Shield size={120} className="text-white" />
+                </div>
+                <div className="relative z-10 flex items-center gap-4">
+                    {team.logo_url ? (
+                        <div className="w-16 h-16 bg-white rounded-2xl p-2 shadow-lg rotate-3 group-hover:rotate-0 transition-transform">
+                            <img src={team.logo_url} className="w-full h-full object-contain" alt="" />
+                        </div>
+                    ) : (
+                        <div className="w-16 h-16 bg-blue-800 rounded-2xl flex items-center justify-center border-2 border-blue-400/30 text-white shadow-lg">
+                            <Shield size={32} />
+                        </div>
+                    )}
+                    <div>
+                        <h3 className="text-xl font-black text-white uppercase tracking-tight">{team.name}</h3>
+                        <p className="text-blue-200 text-[10px] font-bold tracking-widest uppercase">{players.length} Atletas Inscritos</p>
+                    </div>
+                </div>
+            </div>
+            <CardContent className="p-6">
+                <div className="space-y-3">
+                    {players.map((player: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden border border-gray-200 shadow-sm flex items-center justify-center shrink-0">
+                                    {player.photo_url ? (
+                                        <Image src={player.photo_url} alt={player.name} width={32} height={32} className="object-cover" />
+                                    ) : (
+                                        <User className="text-gray-400" size={16} />
+                                    )}
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-gray-800">{player.name}</p>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">{player.position || 'Jogador'}</p>
+                                </div>
+                            </div>
+                            <div className="text-[10px] font-black text-gray-300">#{String(idx + 1).padStart(2, '0')}</div>
+                        </div>
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function StandingsTable({ title, teams }: { title: string, teams: any[] }) {
+    return (
+        <Card className="overflow-hidden border border-gray-100 shadow-xl rounded-2xl bg-white text-slate-900 font-sans">
+            <CardHeader className="bg-gray-50/80 border-b border-gray-100 py-3 px-4">
+                <CardTitle className="text-base font-bold flex items-center gap-2 text-gray-800">
+                    <Trophy className="w-4 h-4 text-yellow-500" />
+                    {title}
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+                <Table>
+                    <TableHeader className="bg-white border-b border-gray-50">
+                        <TableRow className="hover:bg-transparent border-none">
+                            <TableHead className="w-10 text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1">Pos</TableHead>
+                            <TableHead className="font-bold text-gray-400 text-[10px] uppercase py-2 px-2">Time</TableHead>
+                            <TableHead className="text-center font-black text-gray-900 text-[10px] uppercase py-2 px-1">Pts</TableHead>
+                            <TableHead className="text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1">PJ</TableHead>
+                            <TableHead className="text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1">V</TableHead>
+                            <TableHead className="text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1">E</TableHead>
+                            <TableHead className="text-center font-bold text-red-400 text-[10px] uppercase py-2 px-1">D</TableHead>
+                            <TableHead className="text-center font-bold text-gray-400 text-[10px] uppercase py-2 px-1 pr-4">SG</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {teams.map((team, idx) => (
+                            <TableRow key={team.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors">
+                                <TableCell className="text-center py-3 px-1">
+                                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-black 
+                                        ${idx === 0 ? 'bg-yellow-400 text-yellow-900 shadow-sm' :
+                                            idx === 1 ? 'bg-gray-200 text-gray-600' :
+                                                idx === 2 ? 'bg-orange-100 text-orange-700' :
+                                                    'text-gray-400 font-medium'}
+                                    `}>
+                                        {idx + 1}
+                                    </span>
+                                </TableCell>
+                                <TableCell className="font-bold text-gray-800 text-sm py-3 px-2">
+                                    <div className="flex items-center gap-2">
+                                        {team.logo_url ? (
+                                            <div className="relative w-6 h-6 shrink-0">
+                                                <Image src={team.logo_url} alt="" fill className="object-contain" />
+                                            </div>
+                                        ) : (
+                                            <div className="w-6 h-6 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-[8px] text-gray-300 font-bold shrink-0">?</div>
+                                        )}
+                                        <span className="truncate max-w-[80px] sm:max-w-none">{team.name}</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-center font-black text-slate-900 text-sm py-3 px-1">{team.points}</TableCell>
+                                <TableCell className="text-center text-gray-500 text-[11px] py-3 px-1">{team.played}</TableCell>
+                                <TableCell className="text-center text-gray-500 text-[11px] py-3 px-1 font-medium">{team.wins}</TableCell>
+                                <TableCell className="text-center text-gray-500 text-[11px] py-3 px-1">{team.draws}</TableCell>
+                                <TableCell className="text-center text-red-400 text-[11px] py-3 px-1 font-medium">{team.losses}</TableCell>
+                                <TableCell className="text-center font-bold text-gray-400 text-[11px] py-3 px-1 pr-4">
+                                    <span className={team.goalDiff > 0 ? 'text-emerald-600' : team.goalDiff < 0 ? 'text-red-500' : ''}>
+                                        {team.goalDiff > 0 ? `+${team.goalDiff}` : team.goalDiff}
+                                    </span>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
     );
 }

@@ -15,32 +15,44 @@ export async function signUpAction(formData: FormData) {
     try {
         const supabase = createAdminClient();
 
-        console.log('Creating user:', { email, name });
+        // 0. Check if member email already exists
+        const { data: existingMember } = await supabase
+            .from('members')
+            .select('id')
+            .eq('email', email)
+            .single();
 
-        // Upload photo if exists
+        if (existingMember) {
+            return { error: 'Este e-mail já está cadastrado como integrante.' };
+        }
+
+        // 1. Upload photo if exists
         let photo_url = null;
         if (photo && photo.size > 0) {
-            const fileExt = photo.name.split('.').pop();
-            const fileName = `${Date.now()}_${Math.random()}.${fileExt}`;
-            // Upload to Fotos bucket root to match admin behavior
-            const { error: uploadError } = await supabase.storage
-                .from('Fotos')
-                .upload(fileName, photo, {
-                    contentType: photo.type,
-                    upsert: true
-                });
-
-            if (uploadError) {
-                console.error('Error uploading photo:', uploadError);
-            } else {
-                const { data: { publicUrl } } = supabase.storage
+            try {
+                const fileExt = photo.name.split('.').pop();
+                const fileName = `${Date.now()}_${Math.random()}.${fileExt}`;
+                const { error: uploadError } = await supabase.storage
                     .from('Fotos')
-                    .getPublicUrl(fileName);
-                photo_url = publicUrl;
+                    .upload(fileName, photo, {
+                        contentType: photo.type,
+                        upsert: true
+                    });
+
+                if (uploadError) {
+                    console.error('Error uploading photo:', uploadError);
+                } else {
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('Fotos')
+                        .getPublicUrl(fileName);
+                    photo_url = publicUrl;
+                }
+            } catch (storageError) {
+                console.error('Storage error:', storageError);
             }
         }
 
-        // 1. Create auth user with auto-confirm
+        // 2. Create auth user with auto-confirm
         const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
             email,
             password,
@@ -50,14 +62,18 @@ export async function signUpAction(formData: FormData) {
 
         if (signUpError) {
             console.error('Error creating user:', signUpError);
-            return { error: signUpError.message };
+            // If the error message is the specific Supabase one, translate or clarify
+            const msg = signUpError.message.includes('unexpected response')
+                ? 'O servidor do Supabase retornou um erro inesperado (500). Verifique se a SERVICE_ROLE_KEY está correta no .env e se não há triggers conflitantes no banco.'
+                : signUpError.message;
+            return { error: 'Erro no Auth: ' + msg };
         }
 
         if (!authData.user) {
-            return { error: 'Erro inesperado ao criar usuário' };
+            return { error: 'Usuário criado, mas dados não retornados.' };
         }
 
-        // 2. Create member
+        // 3. Create member
         const { data: memberData, error: memberError } = await supabase
             .from('members')
             .insert({
@@ -73,12 +89,11 @@ export async function signUpAction(formData: FormData) {
 
         if (memberError) {
             console.error('Error creating member:', memberError);
-            // Desfazer criação do usuário se falhar membro (opcional, mas recomendado)
             await supabase.auth.admin.deleteUser(authData.user.id);
-            return { error: 'Erro ao criar registro de membro: ' + memberError.message };
+            return { error: 'Erro ao criar integrante: ' + memberError.message };
         }
 
-        // 3. Create/Link profile
+        // 4. Create/Link profile
         const { error: profileError } = await supabase
             .from('profiles')
             .insert({
@@ -89,7 +104,6 @@ export async function signUpAction(formData: FormData) {
 
         if (profileError) {
             console.error('Error creating profile:', profileError);
-            // Tentar limpar
             await supabase.from('members').delete().eq('id', memberData.id);
             await supabase.auth.admin.deleteUser(authData.user.id);
             return { error: 'Erro ao criar perfil: ' + profileError.message };
@@ -98,6 +112,6 @@ export async function signUpAction(formData: FormData) {
         return { success: true };
     } catch (error: any) {
         console.error('Unexpected error in signUpAction:', error);
-        return { error: error.message || 'Erro interno do servidor ao criar conta.' };
+        return { error: 'Erro inesperado: ' + (error.message || 'Contate o administrador.') };
     }
 }

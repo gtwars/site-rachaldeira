@@ -8,8 +8,14 @@ interface Match {
     championship_id: string;
     team_a: { name: string; logo_url?: string } | null;
     team_b: { name: string; logo_url?: string } | null;
+    team_a_id: string | null;
+    team_b_id: string | null;
     score_a: number | null;
     score_b: number | null;
+    penalties_score_a?: number | null;
+    penalties_score_b?: number | null;
+    penalty_winner_id?: string | null;
+    has_draw_advantage?: boolean;
     status: string;
 }
 
@@ -29,6 +35,7 @@ export function BracketViewer({ matches, campId }: BracketViewerProps) {
     const renderTeamRow = (
         team: { name: string; logo_url?: string } | null,
         score: number | null,
+        penaltyScore: number | null | undefined,
         isWinner: boolean
     ) => (
         <div
@@ -52,14 +59,21 @@ export function BracketViewer({ matches, campId }: BracketViewerProps) {
                     <span className="italic text-gray-400 font-normal">A Definir</span>
                 )}
             </span>
-            <span
-                className={`text-xs font-mono px-2 py-1 rounded-md min-w-[28px] text-center border ${isWinner
-                    ? 'bg-green-100 text-green-900 font-bold border-green-200 shadow-sm'
-                    : 'bg-gray-50 text-gray-500 border-gray-100'
-                    }`}
-            >
-                {score ?? '-'}
-            </span>
+            <div className="flex items-center gap-1.5">
+                <span
+                    className={`text-xs font-mono px-2 py-1 rounded-md min-w-[28px] text-center border ${isWinner
+                        ? 'bg-green-100 text-green-900 font-bold border-green-200 shadow-sm'
+                        : 'bg-gray-50 text-gray-500 border-gray-100'
+                        }`}
+                >
+                    {score ?? '-'}
+                </span>
+                {penaltyScore !== null && penaltyScore !== undefined && (score !== null) && (
+                    <span className="text-[11px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 leading-none">
+                        ({penaltyScore})
+                    </span>
+                )}
+            </div>
         </div>
     );
 
@@ -74,9 +88,22 @@ export function BracketViewer({ matches, campId }: BracketViewerProps) {
 
         const sA = match.score_a;
         const sB = match.score_b;
-        const done = sA !== null && sB !== null;
-        const aWin = done && sA! > sB!;
-        const bWin = done && sB! > sA!;
+        const done = match.status === 'completed';
+
+        let aWin = false;
+        let bWin = false;
+
+        if (done) {
+            if (sA !== null && sB !== null) {
+                if (sA > sB) aWin = true;
+                else if (sB > sA) bWin = true;
+                else if (match.has_draw_advantage) aWin = true; // Empate com vantagem do A
+                else if (match.penalty_winner_id) {
+                    if (match.penalty_winner_id === match.team_a_id) aWin = true;
+                    else if (match.penalty_winner_id === match.team_b_id) bWin = true;
+                }
+            }
+        }
 
         const borderColor =
             match.status === 'in_progress'
@@ -103,9 +130,9 @@ export function BracketViewer({ matches, campId }: BracketViewerProps) {
 
         const cardContent = (
             <div className={`w-[210px] rounded-xl border bg-white shadow-sm transition-all duration-300 ${borderColor} ${hasTeams ? 'cursor-pointer hover:shadow-lg hover:border-blue-400 hover:-translate-y-0.5' : ''}`}>
-                {renderTeamRow(match.team_a, sA, aWin)}
+                {renderTeamRow(match.team_a, sA, (sA === sB && sA !== null) ? match.penalties_score_a : null, aWin)}
                 <div className="h-[1px] bg-gray-50" />
-                {renderTeamRow(match.team_b, sB, bWin)}
+                {renderTeamRow(match.team_b, sB, (sA === sB && sA !== null) ? match.penalties_score_b : null, bWin)}
                 <div
                     className={`text-[9px] text-center py-1 uppercase tracking-widest font-black ${statusBar}`}
                 >

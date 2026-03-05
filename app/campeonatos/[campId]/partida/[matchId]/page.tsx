@@ -12,7 +12,8 @@ export default async function MatchPage({ params }: { params: Promise<{ campId: 
         .select(`
             *,
             team_a:teams!team_a_id(*),
-            team_b:teams!team_b_id(*)
+            team_b:teams!team_b_id(*),
+            championship:championship_id(format)
         `)
         .eq('id', matchId)
         .single();
@@ -80,6 +81,7 @@ export default async function MatchPage({ params }: { params: Promise<{ campId: 
                     teamB={teamB}
                     initialStats={stats || []}
                     isAdmin={isAdmin}
+                    championshipFormat={match.championship?.format}
                 />
             </div>
         </main>

@@ -83,6 +83,7 @@ export default function AdminCampeonatosPage() {
                 bracket_type: formData.format === 'bracket' ? 'auto' : null,
                 status: 'not_started',
                 logo_url: null as string | null,
+                count_towards_stats: formData.format !== 'tournament_6_teams',
             };
 
             // Upload logo if selected
@@ -302,6 +303,7 @@ export default function AdminCampeonatosPage() {
                                 <SelectContent>
                                     <SelectItem value="round_robin">Pontos Corridos</SelectItem>
                                     <SelectItem value="bracket">Chaveamento</SelectItem>
+                                    <SelectItem value="tournament_6_teams">Torneio 6 Equipes (2 Grupos)</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

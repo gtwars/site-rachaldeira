@@ -127,23 +127,22 @@ export default async function RankingPage() {
             .eq('voting_period_id', activePeriod.id);
         votes = votesData || [];
     }
-    // Buscar estatísticas de campeonatos para unificar o ranking
-    const { data: championshipStats } = await supabase
-        .from('match_player_stats')
-        .select('*');
-
     // Obter IDs dos rachas de ajustes (pode haver mais de um legado)
     const adjustmentRachaIds = allRachas?.filter(r => r.location === 'Sistema (Manual)' || r.name === 'Ajustes Globais Manuais').map(r => r.id) || [];
 
-    // Calcular rankings para cada membro (APENAS RACHAS ENCERRADOS + CAMPEONATOS + AJUSTES)
+    // Calcular rankings para cada membro (APENAS RACHAS ENCERRADOS + AJUSTES)
     const rankings = members?.map(member => {
         const memberRachaScouts = rachaScouts?.filter(s => s.member_id === member.id) || [];
-        const memberChampStats = championshipStats?.filter(s => s.member_id === member.id) || [];
 
-        // Estatísticas Básicas (Soma de todos os rachas, incluindo ajustes se salvos em scouts)
-        const goals = memberRachaScouts.reduce((sum, s) => sum + (s.goals || 0), 0);
-        const assists = memberRachaScouts.reduce((sum, sumS) => sum + (sumS.assists || 0), 0);
-        const saves = memberRachaScouts.reduce((sum, sumS) => sum + (sumS.difficult_saves || 0), 0);
+        // Estatísticas Básicas (Apenas Rachas)
+        const goalsRacha = memberRachaScouts.reduce((sum, s) => sum + (s.goals || 0), 0);
+        const goals = goalsRacha;
+
+        const assistsRacha = memberRachaScouts.reduce((sum, s) => sum + (s.assists || 0), 0);
+        const assists = assistsRacha;
+
+        const savesRacha = memberRachaScouts.reduce((sum, s) => sum + (s.difficult_saves || 0), 0);
+        const saves = savesRacha;
 
         // Participações: Apenas Rachas ENCERRADOS (reais) que o jogador tem presença "in" + Soma de Ajustes Manuais
         const closedRealRachaIds = allRachas?.filter(r => r.status === 'closed' && !adjustmentRachaIds.includes(r.id)).map(r => r.id) || [];
@@ -168,7 +167,11 @@ export default async function RankingPage() {
 
         const sheriffCount = (allRachas?.filter((r: any) => r.status === 'closed' && !adjustmentRachaIds.includes(r.id) && (r.sheriff_id === member.id || r.sheriff_extra_id === member.id || r.sheriff_extra2_id === member.id)).length || 0) + manualSheriff;
 
-        const points = (top1Count * 3) + (top2Count * 2) + top3Count + sheriffCount;
+        // Adicionar destaques de CAMPEONATOS (Removido a pedido)
+        const totalTop1 = top1Count;
+        const totalSheriff = sheriffCount;
+
+        const points = (totalTop1 * 3) + (top2Count * 2) + top3Count + totalSheriff;
 
         const craqueVotes = votes.filter(v => v.craque_member_id === member.id).length;
         const xerifeVotes = votes.filter(v => v.xerife_member_id === member.id).length;

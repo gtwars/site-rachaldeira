@@ -18,6 +18,9 @@ export default function RegistrarResultadoPage({ params }: { params: Promise<{ c
     const [scoreB, setScoreB] = useState(0);
     const [playerStats, setPlayerStats] = useState<any[]>([]);
     const [saving, setSaving] = useState(false);
+    const [penaltiesScoreA, setPenaltiesScoreA] = useState(0);
+    const [penaltiesScoreB, setPenaltiesScoreB] = useState(0);
+    const [penaltyWinnerId, setPenaltyWinnerId] = useState<string | null>(null);
 
     useEffect(() => {
         loadData();
@@ -26,7 +29,6 @@ export default function RegistrarResultadoPage({ params }: { params: Promise<{ c
     const loadData = async () => {
         const supabase = createClient();
 
-        // 1. Buscar partida e times
         const { data: matchData } = await supabase
             .from('championship_matches')
             .select(`
@@ -44,6 +46,11 @@ export default function RegistrarResultadoPage({ params }: { params: Promise<{ c
                     team_members (
                         members (id, name, position)
                     )
+                ),
+                championship:championship_id (
+                    id,
+                    name,
+                    format
                 )
             `)
             .eq('id', matchId)
@@ -52,14 +59,15 @@ export default function RegistrarResultadoPage({ params }: { params: Promise<{ c
         setMatch(matchData);
         setScoreA(matchData?.score_a || 0);
         setScoreB(matchData?.score_b || 0);
+        setPenaltiesScoreA(matchData?.penalties_score_a || 0);
+        setPenaltiesScoreB(matchData?.penalties_score_b || 0);
+        setPenaltyWinnerId(matchData?.penalty_winner_id || null);
 
-        // 2. Buscar scouts existentes
         const { data: statsData } = await supabase
             .from('match_player_stats')
             .select('*')
             .eq('match_id', matchId);
 
-        // 3. Preparar lista de todos os jogadores dos dois times
         const statsMap = new Map(statsData?.map(s => [s.member_id, s]) || []);
         const initialStats: any[] = [];
 
@@ -77,6 +85,8 @@ export default function RegistrarResultadoPage({ params }: { params: Promise<{ c
                     assists: 0,
                     difficult_saves: 0,
                     warnings: 0,
+                    yellow_cards: 0,
+                    red_cards: 0,
                     name: tm.members.name,
                     position: tm.members.position
                 });
@@ -87,7 +97,6 @@ export default function RegistrarResultadoPage({ params }: { params: Promise<{ c
         processTeam(matchData.team_b);
 
         const sortedStats = [...initialStats].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
         setPlayerStats(sortedStats);
         setLoading(false);
     };
@@ -96,7 +105,6 @@ export default function RegistrarResultadoPage({ params }: { params: Promise<{ c
         setPlayerStats(prev => prev.map(s => {
             if (s.member_id === memberId) {
                 const newValue = Math.max(0, (s[field] || 0) + delta);
-                // Se o campo for 'goals', atualizar automaticamente o placar do time correspondente
                 if (field === 'goals') {
                     if (s.team_id === match.team_a_id) setScoreA(prev => Math.max(0, prev + delta));
                     if (s.team_id === match.team_b_id) setScoreB(prev => Math.max(0, prev + delta));
@@ -109,16 +117,17 @@ export default function RegistrarResultadoPage({ params }: { params: Promise<{ c
 
     const handleSave = async () => {
         setSaving(true);
-
         try {
             const supabase = createClient();
 
-            // 1. Atualizar partida
             const { error: matchError } = await supabase
                 .from('championship_matches')
                 .update({
                     score_a: scoreA,
                     score_b: scoreB,
+                    penalties_score_a: penaltiesScoreA,
+                    penalties_score_b: penaltiesScoreB,
+                    penalty_winner_id: penaltyWinnerId,
                     status: 'completed',
                     played_at: new Date().toISOString()
                 })
@@ -126,15 +135,16 @@ export default function RegistrarResultadoPage({ params }: { params: Promise<{ c
 
             if (matchError) throw matchError;
 
-            // 2. Upsert scouts
             for (const stat of playerStats) {
-                const hasData = stat.goals > 0 || stat.assists > 0 || stat.difficult_saves > 0 || stat.warnings > 0;
+                const hasData = stat.goals > 0 || stat.assists > 0 || stat.difficult_saves > 0 || stat.warnings > 0 || stat.yellow_cards > 0 || stat.red_cards > 0;
                 if (stat.id) {
                     await supabase.from('match_player_stats').update({
                         goals: stat.goals,
                         assists: stat.assists,
                         difficult_saves: stat.difficult_saves,
                         warnings: stat.warnings,
+                        yellow_cards: stat.yellow_cards || 0,
+                        red_cards: stat.red_cards || 0,
                     }).eq('id', stat.id);
                 } else if (hasData) {
                     await supabase.from('match_player_stats').insert({
@@ -145,21 +155,30 @@ export default function RegistrarResultadoPage({ params }: { params: Promise<{ c
                         assists: stat.assists,
                         difficult_saves: stat.difficult_saves,
                         warnings: stat.warnings,
+                        yellow_cards: stat.yellow_cards || 0,
+                        red_cards: stat.red_cards || 0,
                     });
                 }
             }
 
-            // 3. Avançar vencedor no chaveamento se for mata-mata
+            // Knockout advancement logic
             if (match.bracket_position) {
-                const winnerId = scoreA > scoreB ? match.team_a_id : match.team_b_id;
+                // If draw advantage is active and it's a draw, team A (higher seed) wins
+                // But generally winner is based on scores or penalties
+                let winnerId = null;
+                if (scoreA > scoreB) winnerId = match.team_a_id;
+                else if (scoreB > scoreA) winnerId = match.team_b_id;
+                else if (match.has_draw_advantage) winnerId = match.team_a_id; // Team A is 2nd place in QF
+                else winnerId = penaltyWinnerId;
+
                 let nextPos = '';
                 let nextSlot = '';
 
                 if (match.bracket_position === 'qf-1') {
-                    nextPos = 'semi-1';
+                    nextPos = 'semi-2';
                     nextSlot = 'team_b_id';
                 } else if (match.bracket_position === 'qf-2') {
-                    nextPos = 'semi-2';
+                    nextPos = 'semi-1';
                     nextSlot = 'team_b_id';
                 } else if (match.bracket_position === 'semi-1') {
                     nextPos = 'final-1';
@@ -205,7 +224,6 @@ export default function RegistrarResultadoPage({ params }: { params: Promise<{ c
                     </h1>
                 </div>
 
-                {/* Scoreboard */}
                 <Card className="mb-8 bg-white shadow-lg overflow-hidden border-t-4 border-t-blue-600">
                     <CardContent className="p-8">
                         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
@@ -219,9 +237,7 @@ export default function RegistrarResultadoPage({ params }: { params: Promise<{ c
                                     <Button variant="outline" size="sm" className="w-10 h-10 p-0" onClick={() => setScoreA(scoreA + 1)}><Plus size={16} /></Button>
                                 </div>
                             </div>
-
                             <div className="text-4xl font-black text-gray-300">VS</div>
-
                             <div className="flex-1 text-center">
                                 <h2 className="text-2xl font-bold text-gray-900 mb-2 truncate max-w-[250px] mx-auto">
                                     {match.team_b?.name}
@@ -233,32 +249,58 @@ export default function RegistrarResultadoPage({ params }: { params: Promise<{ c
                                 </div>
                             </div>
                         </div>
+
+                        {(scoreA === scoreB && !match.has_draw_advantage) && (
+                            <div className="mt-8 pt-8 border-t border-dashed border-gray-200">
+                                <h3 className="text-center text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Disputa de Pênaltis</h3>
+                                <div className="flex items-center justify-center gap-12">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="flex items-center gap-3">
+                                            <Button variant="outline" size="sm" className="w-8 h-8 p-0" onClick={() => setPenaltiesScoreA(Math.max(0, penaltiesScoreA - 1))}><Minus size={14} /></Button>
+                                            <span className="text-3xl font-black text-blue-600 w-12 text-center">{penaltiesScoreA}</span>
+                                            <Button variant="outline" size="sm" className="w-8 h-8 p-0" onClick={() => setPenaltiesScoreA(penaltiesScoreA + 1)}><Plus size={14} /></Button>
+                                        </div>
+                                        <Button
+                                            variant={penaltyWinnerId === match.team_a_id ? "secondary" : "outline"}
+                                            size="sm"
+                                            onClick={() => setPenaltyWinnerId(match.team_a_id)}
+                                        >
+                                            Vencedor {match.team_a?.name}
+                                        </Button>
+                                    </div>
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="flex items-center gap-3">
+                                            <Button variant="outline" size="sm" className="w-8 h-8 p-0" onClick={() => setPenaltiesScoreB(Math.max(0, penaltiesScoreB - 1))}><Minus size={14} /></Button>
+                                            <span className="text-3xl font-black text-blue-600 w-12 text-center">{penaltiesScoreB}</span>
+                                            <Button variant="outline" size="sm" className="w-8 h-8 p-0" onClick={() => setPenaltiesScoreB(penaltiesScoreB + 1)}><Plus size={14} /></Button>
+                                        </div>
+                                        <Button
+                                            variant={penaltyWinnerId === match.team_b_id ? "secondary" : "outline"}
+                                            size="sm"
+                                            onClick={() => setPenaltyWinnerId(match.team_b_id)}
+                                        >
+                                            Vencedor {match.team_b?.name}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {match.has_draw_advantage && scoreA === scoreB && (
+                            <div className="mt-4 p-3 bg-blue-50 text-blue-800 text-center rounded-lg text-sm border border-blue-100">
+                                ℹ️ <strong>Vantagem do Empate:</strong> {match.team_a?.name} avança pelo empate nesta fase.
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
-                {/* Scouts Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Team A Scouts */}
-                    <TeamScoutsTable
-                        teamName={match.team_a?.name}
-                        players={teamAPlayers}
-                        onUpdate={updateStat}
-                    />
-
-                    {/* Team B Scouts */}
-                    <TeamScoutsTable
-                        teamName={match.team_b?.name}
-                        players={teamBPlayers}
-                        onUpdate={updateStat}
-                    />
+                    <TeamScoutsTable teamName={match.team_a?.name} players={teamAPlayers} onUpdate={updateStat} />
+                    <TeamScoutsTable teamName={match.team_b?.name} players={teamBPlayers} onUpdate={updateStat} />
                 </div>
 
-                {/* Footer Actions */}
                 <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-xl z-10">
                     <div className="max-w-5xl mx-auto flex justify-end gap-3">
-                        <Button variant="outline" onClick={() => router.push(`/admin/campeonatos/${campId}`)}>
-                            Cancelar
-                        </Button>
+                        <Button variant="outline" onClick={() => router.push(`/admin/campeonatos/${campId}`)}>Cancelar</Button>
                         <Button onClick={handleSave} disabled={saving} size="lg" className="px-10">
                             <CheckCircle size={20} className="mr-2" />
                             {saving ? 'Salvando...' : 'Finalizar Partida e Salvar Scouts'}
@@ -284,7 +326,8 @@ function TeamScoutsTable({ teamName, players, onUpdate }: { teamName: string, pl
                             <TableHead className="text-center w-24">⚽ Gols</TableHead>
                             <TableHead className="text-center w-24">🎯 Ast</TableHead>
                             <TableHead className="text-center w-24">🧱 Def</TableHead>
-                            <TableHead className="text-center w-24">⚠️ Adv</TableHead>
+                            <TableHead className="text-center w-24 text-yellow-600">🟨 AMA</TableHead>
+                            <TableHead className="text-center w-24 text-red-600">🟥 VER</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -317,9 +360,16 @@ function TeamScoutsTable({ teamName, players, onUpdate }: { teamName: string, pl
                                 </TableCell>
                                 <TableCell className="text-center py-2">
                                     <div className="flex items-center justify-center gap-1">
-                                        <button onClick={() => onUpdate(stat.member_id, 'warnings', -1)} className="p-1 hover:bg-gray-100 rounded"><Minus size={12} /></button>
-                                        <span className={`font-bold ${stat.warnings > 0 ? 'text-red-600' : 'text-gray-400'}`}>{stat.warnings}</span>
-                                        <button onClick={() => onUpdate(stat.member_id, 'warnings', 1)} className="p-1 hover:bg-gray-100 rounded"><Plus size={12} /></button>
+                                        <button onClick={() => onUpdate(stat.member_id, 'yellow_cards', -1)} className="p-1 hover:bg-gray-100 rounded"><Minus size={12} /></button>
+                                        <span className={`font-bold ${stat.yellow_cards > 0 ? 'text-yellow-600' : 'text-gray-400'}`}>{stat.yellow_cards || 0}</span>
+                                        <button onClick={() => onUpdate(stat.member_id, 'yellow_cards', 1)} className="p-1 hover:bg-gray-100 rounded"><Plus size={12} /></button>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-center py-2">
+                                    <div className="flex items-center justify-center gap-1">
+                                        <button onClick={() => onUpdate(stat.member_id, 'red_cards', -1)} className="p-1 hover:bg-gray-100 rounded"><Minus size={12} /></button>
+                                        <span className={`font-bold ${stat.red_cards > 0 ? 'text-red-600' : 'text-gray-400'}`}>{stat.red_cards || 0}</span>
+                                        <button onClick={() => onUpdate(stat.member_id, 'red_cards', 1)} className="p-1 hover:bg-gray-100 rounded"><Plus size={12} /></button>
                                     </div>
                                 </TableCell>
                             </TableRow>
