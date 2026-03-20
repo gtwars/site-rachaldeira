@@ -181,13 +181,13 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
                 const fileExt = teamPhotoFile.name.split('.').pop();
                 const fileName = `team_${Date.now()}.${fileExt}`;
                 const { error: uploadError } = await supabase.storage
-                    .from('Fotos')
+                    .from('Fotos camp-times')
                     .upload(fileName, teamPhotoFile);
 
                 if (uploadError) throw uploadError;
 
                 const { data: { publicUrl } } = supabase.storage
-                    .from('Fotos')
+                    .from('Fotos camp-times')
                     .getPublicUrl(fileName);
 
                 logoUrl = publicUrl;
@@ -209,7 +209,7 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
             setTeamPhotoFile(null);
             loadData();
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || String(err) || 'Ocorreu um erro.');
         } finally {
             setSaving(false);
         }
@@ -760,24 +760,29 @@ export default function GerenciarCampeonatoPage({ params }: { params: Promise<{ 
                 {/* Modals */}
                 <Modal isOpen={isTeamModalOpen} onClose={() => setIsTeamModalOpen(false)} title="Novo Time" footer={<Button onClick={handleAddTeam} disabled={saving}>Salvar</Button>}>
                     <div className="space-y-4">
+                        {error && <div className="p-3 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
                         <Input placeholder="Nome do Time" value={teamForm.name} onChange={e => setTeamForm({ ...teamForm, name: e.target.value })} />
                         <Input type="file" onChange={e => setTeamPhotoFile(e.target.files?.[0] || null)} />
                     </div>
                 </Modal>
 
                 <Modal isOpen={isPlayerModalOpen} onClose={() => setIsPlayerModalOpen(false)} title={`Jogadores - ${selectedTeam?.name}`} footer={<Button onClick={handleAddPlayer} disabled={saving}>Adicionar</Button>}>
-                    <Select value={playerForm.member_id} onValueChange={v => setPlayerForm({ member_id: v })}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
-                            {members.filter(m => !selectedTeam?.team_members?.some((tm: any) => tm.members.id === m.id)).map(m => (
-                                <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <div className="space-y-4">
+                        {error && <div className="p-3 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
+                        <Select value={playerForm.member_id} onValueChange={v => setPlayerForm({ member_id: v })}>
+                            <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                            <SelectContent>
+                                {members.filter(m => !selectedTeam?.team_members?.some((tm: any) => tm.members.id === m.id)).map(m => (
+                                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </Modal>
 
                 <Modal isOpen={isManualMatchModalOpen} onClose={() => setIsManualMatchModalOpen(false)} title="Nova Partida" footer={<Button onClick={handleSaveManualMatch} disabled={saving}>Salvar</Button>}>
                     <div className="space-y-4">
+                        {error && <div className="p-3 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
                         <div className="grid grid-cols-2 gap-2">
                             <Select value={manualMatchForm.team_a_id} onValueChange={v => setManualMatchForm({ ...manualMatchForm, team_a_id: v })}>
                                 <SelectTrigger><SelectValue placeholder="Time A" /></SelectTrigger>

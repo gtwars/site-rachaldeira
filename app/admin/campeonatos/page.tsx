@@ -132,16 +132,43 @@ export default function AdminCampeonatosPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Tem certeza que deseja excluir este campeonato?')) return;
+        if (!confirm('Tem certeza que deseja excluir este campeonato? Todos os times, partidas e estatísticas vinculados serão perdidos irreversivelmente!')) return;
 
         const supabase = createClient();
-        const { error } = await supabase
-            .from('championships')
-            .delete()
-            .eq('id', id);
+        
+        try {
+            // Excluir match_player_stats (via matchIds)
+            const { data: matches } = await supabase.from('championship_matches').select('id').eq('championship_id', id);
+            const matchIds = matches?.map(m => m.id) || [];
+            if (matchIds.length > 0) {
+                await supabase.from('match_player_stats').delete().in('match_id', matchIds);
+            }
 
-        if (!error) {
+            // Excluir partidas
+            await supabase.from('championship_matches').delete().eq('championship_id', id);
+
+            // Excluir team_members (via teamIds)
+            const { data: teams } = await supabase.from('teams').select('id').eq('championship_id', id);
+            const teamIds = teams?.map(t => t.id) || [];
+            if (teamIds.length > 0) {
+                await supabase.from('team_members').delete().in('team_id', teamIds);
+            }
+
+            // Excluir times
+            await supabase.from('teams').delete().eq('championship_id', id);
+
+            // Excluir campeonato
+            const { error } = await supabase
+                .from('championships')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            
             loadChampionships();
+            alert('Campeonato excluído com sucesso!');
+        } catch (err: any) {
+            alert('Erro ao excluir: ' + (err.message || 'Erro desconhecido. Verifique as dependências.'));
         }
     };
 

@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
 import { BracketViewer } from '@/components/bracket-viewer';
-
 export default async function CampeonatoDetalhesPage({ params }: { params: Promise<{ campId: string }> }) {
     const { campId } = await params;
     const supabase = await createClient();

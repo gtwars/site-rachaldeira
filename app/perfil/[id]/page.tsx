@@ -70,22 +70,11 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
     const { data: rachasAsTop3 } = await supabase.from('rachas').select('id').eq('status', 'closed').or(`top3_id.eq.${id},top3_extra_id.eq.${id},top3_extra2_id.eq.${id}`);
     const { data: rachasAsSheriff } = await supabase.from('rachas').select('id').eq('status', 'closed').or(`sheriff_id.eq.${id},sheriff_extra_id.eq.${id},sheriff_extra2_id.eq.${id}`);
 
-    // Consolidação de Dados (Rachas + Campeonatos)
-    const goalsRacha = rachaScouts?.reduce((acc, s) => acc + (s.goals || 0), 0) || 0;
-    const goalsChamp = completedChampScouts.reduce((acc, s) => acc + (s.goals || 0), 0) || 0;
-    const goals = goalsRacha + goalsChamp;
-
-    const assistsRacha = rachaScouts?.reduce((acc, s) => acc + (s.assists || 0), 0) || 0;
-    const assistsChamp = completedChampScouts.reduce((acc, s) => acc + (s.assists || 0), 0) || 0;
-    const assists = assistsRacha + assistsChamp;
-
-    const savesRacha = rachaScouts?.reduce((acc, s) => acc + (s.difficult_saves || 0), 0) || 0;
-    const savesChamp = completedChampScouts.reduce((acc, s) => acc + (s.difficult_saves || 0), 0) || 0;
-    const saves = savesRacha + savesChamp;
-
-    const warningsRacha = rachaScouts?.reduce((acc, s) => acc + (s.warnings || 0), 0) || 0;
-    const warningsChamp = completedChampScouts.reduce((acc, s) => acc + (s.warnings || 0), 0) || 0;
-    const warnings = warningsRacha + warningsChamp;
+    // Consolidação de Dados (Rachas apenas, Campeonatos removidos dos scouts gerais)
+    const goals = rachaScouts?.reduce((acc, s) => acc + (s.goals || 0), 0) || 0;
+    const assists = rachaScouts?.reduce((acc, s) => acc + (s.assists || 0), 0) || 0;
+    const saves = rachaScouts?.reduce((acc, s) => acc + (s.difficult_saves || 0), 0) || 0;
+    const warnings = rachaScouts?.reduce((acc, s) => acc + (s.warnings || 0), 0) || 0;
 
     // Buscar TODOS os ajustes manuais deste membro
     const manualAdjustments = rachaScouts?.filter(s => adjustmentRachaIds.includes(s.racha_id)) || [];
