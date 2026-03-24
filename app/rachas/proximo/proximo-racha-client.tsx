@@ -46,20 +46,32 @@ export default function ProximoRachaClient({ racha, initialAttendance, initialSc
             const supabase = createClient();
 
             if (myAttendance) {
-                const { error: updateError } = await supabase
-                    .from('racha_attendance')
-                    .update({ status, confirmed_at: new Date().toISOString() })
-                    .eq('id', myAttendance.id);
+                if (myAttendance.status === status) {
+                    // Desfazer confirmação (excuir)
+                    const { error: deleteError } = await supabase
+                        .from('racha_attendance')
+                        .delete()
+                        .eq('id', myAttendance.id);
 
-                if (updateError) throw updateError;
+                    if (deleteError) throw deleteError;
 
-                setAttendance((prev: any[]) =>
-                    prev.map((a: any) =>
-                        a.id === myAttendance.id
-                            ? { ...a, status, confirmed_at: new Date().toISOString() }
-                            : a
-                    )
-                );
+                    setAttendance((prev: any[]) => prev.filter((a: any) => a.id !== myAttendance.id));
+                } else {
+                    const { error: updateError } = await supabase
+                        .from('racha_attendance')
+                        .update({ status, confirmed_at: new Date().toISOString() })
+                        .eq('id', myAttendance.id);
+
+                    if (updateError) throw updateError;
+
+                    setAttendance((prev: any[]) =>
+                        prev.map((a: any) =>
+                            a.id === myAttendance.id
+                                ? { ...a, status, confirmed_at: new Date().toISOString() }
+                                : a
+                        )
+                    );
+                }
             } else {
                 const { data: newRecord, error: insertError } = await supabase
                     .from('racha_attendance')
@@ -237,7 +249,7 @@ export default function ProximoRachaClient({ racha, initialAttendance, initialSc
                         <div className="flex gap-4">
                             <Button
                                 onClick={() => handleConfirmation('in')}
-                                disabled={loading || isLocked || myAttendance?.status === 'in'}
+                                disabled={loading || isLocked}
                                 className={`flex-1 font-semibold text-lg py-6 transition-all ${myAttendance?.status === 'in'
                                     ? 'bg-green-700 hover:bg-green-800 text-white shadow-lg scale-[1.02] ring-2 ring-green-500 ring-offset-2'
                                     : 'bg-green-500 hover:bg-green-600 text-white opacity-90 hover:opacity-100'
@@ -248,7 +260,7 @@ export default function ProximoRachaClient({ racha, initialAttendance, initialSc
                             </Button>
                             <Button
                                 onClick={() => handleConfirmation('out')}
-                                disabled={loading || isLocked || myAttendance?.status === 'out'}
+                                disabled={loading || isLocked}
                                 className={`flex-1 font-semibold text-lg py-6 transition-all ${myAttendance?.status === 'out'
                                     ? 'bg-red-700 hover:bg-red-800 text-white shadow-lg scale-[1.02] ring-2 ring-red-500 ring-offset-2'
                                     : 'bg-red-500 hover:bg-red-600 text-white opacity-90 hover:opacity-100'

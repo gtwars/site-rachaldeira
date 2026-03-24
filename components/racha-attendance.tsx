@@ -51,18 +51,29 @@ export default function RachaAttendance({ rachaId, initialStatus, isOpen, isAdmi
         // First check if already exists to update properly or just upsert
         const { data: existing } = await supabase
             .from('racha_attendance')
-            .select('id')
+            .select('id, status')
             .eq('racha_id', rachaId)
             .eq('member_id', profile.member_id)
             .single();
 
         let error;
+        let finalStatus = newStatus;
         if (existing) {
-            const { error: updateError } = await supabase
-                .from('racha_attendance')
-                .update({ status: newStatus })
-                .eq('id', existing.id);
-            error = updateError;
+            if (existing.status === newStatus) {
+                // User wants to unconfirm (delete)
+                const { error: deleteError } = await supabase
+                    .from('racha_attendance')
+                    .delete()
+                    .eq('id', existing.id);
+                error = deleteError;
+                finalStatus = null as any; // Reset status on success
+            } else {
+                const { error: updateError } = await supabase
+                    .from('racha_attendance')
+                    .update({ status: newStatus })
+                    .eq('id', existing.id);
+                error = updateError;
+            }
         } else {
             const { error: insertError } = await supabase
                 .from('racha_attendance')
@@ -78,7 +89,7 @@ export default function RachaAttendance({ rachaId, initialStatus, isOpen, isAdmi
             console.error(error);
             alert("Erro ao salvar presença: " + error.message);
         } else {
-            setStatus(newStatus);
+            setStatus(finalStatus);
             router.refresh(); // Refresh server components to update counts
         }
         setLoading(false);
