@@ -23,13 +23,17 @@ export async function middleware(request: NextRequest) {
                     return request.cookies.getAll()
                 },
                 setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
-                    cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-                    supabaseResponse = NextResponse.next({
-                        request,
+                    cookiesToSet.forEach(({ name, value, options }) => {
+                        // Ensure cookie options are consistent
+                        const cookieOptions = {
+                            ...options,
+                            path: '/',
+                            sameSite: 'lax',
+                            secure: process.env.NODE_ENV === 'production',
+                        }
+                        request.cookies.set(name, value)
+                        supabaseResponse.cookies.set(name, value, cookieOptions)
                     })
-                    cookiesToSet.forEach(({ name, value, options }) =>
-                        supabaseResponse.cookies.set(name, value, options)
-                    )
                 },
             },
         }

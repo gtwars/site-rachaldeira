@@ -280,6 +280,8 @@ export default async function RachaDetalhesPage({ params }: { params: Promise<{ 
                             initialStatus={userAttendanceStatus}
                             isOpen={racha.status === 'open'}
                             isAdmin={isAdmin}
+                            userMemberId={userMemberId}
+                            isLoggedIn={!!user}
                         />
                     </CardContent>
                 </Card>

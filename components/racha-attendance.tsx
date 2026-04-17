@@ -11,36 +11,31 @@ interface RachaAttendanceProps {
     initialStatus: 'in' | 'out' | null;
     isOpen: boolean;
     isAdmin?: boolean;
+    userMemberId?: string | null;
+    isLoggedIn?: boolean;
 }
 
-export default function RachaAttendance({ rachaId, initialStatus, isOpen, isAdmin }: RachaAttendanceProps) {
+export default function RachaAttendance({ rachaId, initialStatus, isOpen, isAdmin, userMemberId, isLoggedIn }: RachaAttendanceProps) {
     const [status, setStatus] = useState<'in' | 'out' | null>(initialStatus);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const supabase = createClient();
 
     const handleAttendance = async (newStatus: 'in' | 'out') => {
-        setLoading(true);
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (!user) {
+        if (!isLoggedIn) {
             alert("Você precisa fazer login para confirmar presença.");
-            setLoading(false);
             return;
         }
 
-        // Get member_id
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('member_id')
-            .eq('id', user.id)
-            .single();
-
-        if (!profile?.member_id) {
-            alert("Seu perfil de membro não foi encontrado. Entre em contato com o admin.");
-            setLoading(false);
+        if (!userMemberId) {
+            alert("Seu perfil de usuário não está vinculado a um jogador. Entre em contato com o administrador para vincular sua conta.");
             return;
         }
+
+        setLoading(true);
+        const supabase = createClient();
+
+        // Check if member exists in profiles (already verified by props, but we use the ID)
+        const memberId = userMemberId;
 
         // Upsert attendance
         // Note: racha_attendance logic usually checks user_id or member_id. Here we use member_id.
@@ -53,7 +48,7 @@ export default function RachaAttendance({ rachaId, initialStatus, isOpen, isAdmi
             .from('racha_attendance')
             .select('id, status')
             .eq('racha_id', rachaId)
-            .eq('member_id', profile.member_id)
+            .eq('member_id', memberId)
             .single();
 
         let error;
@@ -79,7 +74,7 @@ export default function RachaAttendance({ rachaId, initialStatus, isOpen, isAdmi
                 .from('racha_attendance')
                 .insert({
                     racha_id: rachaId,
-                    member_id: profile.member_id,
+                    member_id: memberId,
                     status: newStatus
                 });
             error = insertError;

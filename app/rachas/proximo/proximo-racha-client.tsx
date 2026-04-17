@@ -39,6 +39,11 @@ export default function ProximoRachaClient({ racha, initialAttendance, initialSc
     const handleConfirmation = async (status: 'in' | 'out') => {
         if (isLocked) return;
 
+        if (!userMemberId) {
+            setError('Seu perfil de usuário não está vinculado a um integrante. Entre em contato com o administrador.');
+            return;
+        }
+
         setLoading(true);
         setError('');
 

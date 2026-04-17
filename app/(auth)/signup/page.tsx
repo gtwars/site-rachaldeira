@@ -24,6 +24,54 @@ export default function SignupPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const compressImage = (file: File): Promise<File> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            const newFile = new File([blob], file.name, {
+                                type: 'image/jpeg',
+                                lastModified: Date.now(),
+                            });
+                            resolve(newFile);
+                        } else {
+                            reject(new Error('Canvas to Blob failed'));
+                        }
+                    }, 'image/jpeg', 0.8);
+                };
+                img.onerror = (error) => reject(error);
+            };
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -55,7 +103,13 @@ export default function SignupPage() {
             formData.append('phone', phone);
 
             if (photo) {
-                formData.append('photo', photo);
+                try {
+                    const compressedPhoto = await compressImage(photo);
+                    formData.append('photo', compressedPhoto);
+                } catch (e) {
+                    console.error("Erro ao comprimir imagem, enviando original:", e);
+                    formData.append('photo', photo);
+                }
             }
 
             const result = await signUpAction(formData);
@@ -66,7 +120,12 @@ export default function SignupPage() {
                 router.push('/login');
             }
         } catch (err: any) {
-            setError(err.message || 'Erro ao criar conta');
+            let errorMsg = err.message || 'Erro ao criar conta';
+            // Provide a better UX for common Vercel Payload/Timeout errors returning generic text
+            if (errorMsg.includes('unexpected response')) {
+                errorMsg = 'Erro de conexão com o servidor. Se estiver enviando uma foto, ela pode ser muito grande ou sua conexão está instável. Tente enviar sem foto.';
+            }
+            setError(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -98,6 +157,7 @@ export default function SignupPage() {
                                 accept="image/*"
                                 onChange={(e) => setPhoto(e.target.files?.[0] || null)}
                                 className="cursor-pointer"
+                                disabled={loading}
                             />
                         </div>
 
@@ -110,6 +170,7 @@ export default function SignupPage() {
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 required
+                                disabled={loading}
                             />
                         </div>
 
@@ -122,6 +183,7 @@ export default function SignupPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
+                                disabled={loading}
                             />
                         </div>
 
@@ -133,6 +195,7 @@ export default function SignupPage() {
                                 value={position}
                                 onChange={(e) => setPosition(e.target.value)}
                                 required
+                                disabled={loading}
                             >
                                 <option value="" disabled>Selecione uma posição</option>
                                 <option value="Goleiro">Goleiro</option>
@@ -153,6 +216,7 @@ export default function SignupPage() {
                                 onChange={(e) => setAge(e.target.value)}
                                 required
                                 min="1"
+                                disabled={loading}
                             />
                         </div>
 
@@ -165,6 +229,7 @@ export default function SignupPage() {
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
                                 required
+                                disabled={loading}
                             />
                         </div>
 
@@ -177,6 +242,7 @@ export default function SignupPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
+                                disabled={loading}
                             />
                         </div>
 
@@ -189,12 +255,16 @@ export default function SignupPage() {
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 required
+                                disabled={loading}
                             />
                         </div>
 
                         {error && (
                             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
                                 {error}
+                                {error.includes('conexão') && (
+                                    <p className="mt-2 text-xs font-semibold">Dica: Tente carregar novamente. Se o erro persistir, verifique se seu e-mail já não foi ativado.</p>
+                                )}
                             </div>
                         )}
 
@@ -205,6 +275,12 @@ export default function SignupPage() {
                         >
                             {loading ? 'Criando conta...' : 'Criar Conta'}
                         </Button>
+                        
+                        {loading && (
+                            <p className="text-center text-xs text-gray-500 animate-pulse">
+                                Isso pode levar alguns segundos dependendo da sua conexão...
+                            </p>
+                        )}
 
                         <div className="text-center text-sm text-gray-600 pt-2">
                             Já tem uma conta?{' '}
