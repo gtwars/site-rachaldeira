@@ -17,6 +17,22 @@ export default function ResetPasswordPage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [initializing, setInitializing] = useState(true);
+    const [hasSession, setHasSession] = useState(false);
+
+    // Verificamos se há uma sessão ativa (vinda do link do e-mail)
+    useState(() => {
+        const checkSession = async () => {
+            const supabase = createClient();
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session) {
+                setHasSession(true);
+            }
+            setInitializing(false);
+        };
+        checkSession();
+    });
 
     const handleResetPassword = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -71,7 +87,23 @@ export default function ResetPasswordPage() {
                     <p className="text-gray-600 mt-2">Digite sua nova senha abaixo</p>
                 </CardHeader>
                 <CardContent>
-                    {success ? (
+                    {initializing ? (
+                        <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+                            <p className="text-gray-600">Verificando autorização...</p>
+                        </div>
+                    ) : !hasSession && !success ? (
+                        <div className="space-y-4">
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                                Sessão de redefinição expirada ou inválida. Por favor, solicite um novo e-mail.
+                            </div>
+                            <Link href="/forgot-password">
+                                <Button className="w-full bg-green-600 hover:bg-green-700">
+                                    Solicitar Novo E-mail
+                                </Button>
+                            </Link>
+                        </div>
+                    ) : success ? (
                         <div className="space-y-4">
                             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
                                 Senha redefinida com sucesso! Você será redirecionado para o login em instantes.
