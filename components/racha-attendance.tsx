@@ -110,6 +110,7 @@ export default function RachaAttendance({ rachaId, initialStatus, isOpen, isAdmi
                             onClick={async () => {
                                 if (confirm('Deseja reabrir as confirmações?')) {
                                     setLoading(true);
+                                    const supabase = createClient();
                                     await supabase.from('rachas').update({ status: 'open' }).eq('id', rachaId);
                                     router.refresh();
                                     setLoading(false);

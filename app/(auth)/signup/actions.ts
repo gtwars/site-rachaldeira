@@ -3,11 +3,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
 
-'use server';
-
-import { createAdminClient } from '@/lib/supabase/admin';
-import { redirect } from 'next/navigation';
-
 export async function signUpAction(formData: FormData) {
     // 0. Extract and normalize data
     const name = (formData.get('name') as string)?.trim();
