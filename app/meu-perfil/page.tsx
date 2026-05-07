@@ -274,17 +274,18 @@ export default function UserProfilePage() {
                 <h1 className="text-2xl font-black text-white tracking-tight">Meu Perfil</h1>
 
                 {/* ── HEADER CARD ── */}
-                <div className="rounded-2xl overflow-hidden" style={{ background: '#0d0d1a', border: `1.5px solid ${border}33`, boxShadow: `0 0 40px ${border}18` }}>
+                <div className="rounded-2xl" style={{ background: '#0d0d1a', border: `1.5px solid ${border}33`, boxShadow: `0 0 40px ${border}18` }}>
                     {/* Banner */}
-                    <div className="h-28 relative" style={{ background: `linear-gradient(135deg, ${border}28 0%, #0d0d1a 80%)` }}>
+                    <div className="h-24 rounded-t-2xl overflow-hidden relative" style={{ background: `linear-gradient(135deg, ${border}40 0%, #0d0d1a 80%)` }}>
                         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(255,255,255,.04) 20px,rgba(255,255,255,.04) 40px)' }} />
                     </div>
 
-                    <div className="px-6 pb-6 -mt-14">
-                        <div className="flex items-end gap-4">
+                    <div className="px-6 pb-6">
+                        {/* Avatar + Info em row, avatar com -mt para sobreposição */}
+                        <div className="flex items-end gap-4 -mt-12">
                             {/* Avatar */}
-                            <div className="relative flex-shrink-0">
-                                <div className="w-24 h-24 rounded-full overflow-hidden" style={{ border: `3px solid ${border}`, boxShadow: `0 0 16px ${border}44` }}>
+                            <div className="relative flex-shrink-0 z-10">
+                                <div className="w-24 h-24 rounded-full overflow-hidden" style={{ border: `3px solid ${border}`, boxShadow: `0 0 20px ${border}66`, background: '#0d0d1a' }}>
                                     {formData.photo_url ? (
                                         <NextImage src={formData.photo_url} alt={formData.name} width={96} height={96} className="w-full h-full object-cover object-top" />
                                     ) : (
@@ -294,15 +295,15 @@ export default function UserProfilePage() {
                                     )}
                                 </div>
                                 {isEditing && (
-                                    <label className="absolute -bottom-1 -right-1 p-1.5 rounded-full cursor-pointer" style={{ background: border }}>
+                                    <label className="absolute -bottom-1 -right-1 p-1.5 rounded-full cursor-pointer z-20" style={{ background: border }}>
                                         <Upload size={12} className="text-gray-900" />
                                         <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={saveStatus === 'saving'} />
                                     </label>
                                 )}
                             </div>
 
-                            {/* Info */}
-                            <div className="flex-1 pb-1 min-w-0">
+                            {/* Info — alinhado à base do avatar */}
+                            <div className="flex-1 min-w-0 pb-1">
                                 <h2 className="text-xl font-black text-white truncate">{formData.name || 'Sem nome'}</h2>
                                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                     {rawPos && (
@@ -323,7 +324,7 @@ export default function UserProfilePage() {
                             {!isEditing && (
                                 <button
                                     onClick={() => setIsEditing(true)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors mb-1"
                                     style={{ background: 'rgba(255,255,255,0.06)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.1)' }}
                                 >
                                     <Edit2 size={12} /> Editar
