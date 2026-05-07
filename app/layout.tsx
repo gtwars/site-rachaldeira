@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { createClient } from "@/lib/supabase/server";
-import { Navbar } from "@/components/layout/navbar";
-import Footer from "@/components/Footer";
+import { ConditionalNavbar } from "@/components/layout/conditional-navbar";
+import { ConditionalFooter } from "@/components/layout/conditional-footer";
 import { Toaster } from "sonner";
 
 
@@ -108,11 +108,11 @@ export default async function RootLayout({
     return (
         <html lang="pt-BR">
             <body className={`${poppins.className} antialiased flex flex-col min-h-screen`}>
-                <Navbar user={user} profile={profile} member={memberData} />
+                <ConditionalNavbar user={user} profile={profile} member={memberData} />
                 <div className="flex-1">
                     {children}
                 </div>
-                <Footer />
+                <ConditionalFooter />
                 <Toaster />
             </body>
         </html>

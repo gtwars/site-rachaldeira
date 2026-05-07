@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import NextImage from 'next/image';
-import { Calendar, MapPin, User, Trophy, Target, Shield, Users, Upload, Save, Camera, Edit2 } from 'lucide-react';
+import {
+    User, Upload, Save, Camera, Edit2, Goal, HandMetal,
+    Activity, Shield, Trophy, Crown, Star, Award, Medal,
+} from 'lucide-react';
 
 const Label = ({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) => (
-    <label htmlFor={htmlFor} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+    <label htmlFor={htmlFor} className="text-xs font-semibold uppercase tracking-wider text-gray-400">
         {children}
     </label>
 );
@@ -17,47 +19,46 @@ const Label = ({ htmlFor, children }: { htmlFor: string; children: React.ReactNo
 const POSITIONS = [
     { value: 'GOL', label: 'Goleiro' },
     { value: 'ZAG', label: 'Zagueiro' },
-    { value: 'LD', label: 'Lateral Direito' },
-    { value: 'LE', label: 'Lateral Esquerdo' },
+    { value: 'LD',  label: 'Lateral Direito' },
+    { value: 'LE',  label: 'Lateral Esquerdo' },
     { value: 'VOL', label: 'Volante' },
     { value: 'MEI', label: 'Meia' },
-    { value: 'PD', label: 'Ponta Direita' },
-    { value: 'PE', label: 'Ponta Esquerda' },
+    { value: 'PD',  label: 'Ponta Direita' },
+    { value: 'PE',  label: 'Ponta Esquerda' },
     { value: 'ATA', label: 'Atacante' },
 ];
 
+const LEVEL_LABEL  = ['Bronze', 'Prata', 'Ouro', 'Elite', 'Lenda'];
+const LEVEL_BORDER = ['#cd7f32', '#a8b8c8', '#ffd700', '#00BFFF', '#ff5500'];
+const LEVEL_RATING = [65, 73, 80, 87, 94];
+
+interface Stats {
+    goals: number; assists: number; saves: number; warnings: number;
+    matches: number; top1: number; top2: number; top3: number; sheriff: number; championships: number;
+}
+
 export default function UserProfilePage() {
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading]       = useState(true);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-    const [user, setUser] = useState<any>(null);
-    const [member, setMember] = useState<any>(null);
-    const [stats, setStats] = useState({
-        goals: 0,
-        assists: 0,
-        difficult_saves: 0,
-        participations: 0
+    const [user, setUser]             = useState<any>(null);
+    const [member, setMember]         = useState<any>(null);
+    const [stats, setStats]           = useState<Stats>({
+        goals: 0, assists: 0, saves: 0, warnings: 0,
+        matches: 0, top1: 0, top2: 0, top3: 0, sheriff: 0, championships: 0,
     });
 
-    // Form state
-    const [formData, setFormData] = useState({
-        name: '',
-        position: '',
-        photo_url: '',
-    });
+    const [formData, setFormData] = useState({ name: '', position: '', photo_url: '' });
     const [isEditing, setIsEditing] = useState(false);
 
-    // Gallery upload state
     const [showGalleryUpload, setShowGalleryUpload] = useState(false);
-    const [galleryFile, setGalleryFile] = useState<File | null>(null);
-    const [galleryType, setGalleryType] = useState<'photo' | 'video'>('photo');
-    const [galleryCaption, setGalleryCaption] = useState('');
-    const [galleryUploading, setGalleryUploading] = useState(false);
+    const [galleryFile, setGalleryFile]             = useState<File | null>(null);
+    const [galleryType, setGalleryType]             = useState<'photo' | 'video'>('photo');
+    const [galleryCaption, setGalleryCaption]       = useState('');
+    const [galleryUploading, setGalleryUploading]   = useState(false);
 
     const supabase = createClient();
 
-    useEffect(() => {
-        loadProfile();
-    }, []);
+    useEffect(() => { loadProfile(); }, []);
 
     const loadProfile = async () => {
         try {
@@ -65,59 +66,30 @@ export default function UserProfilePage() {
             if (!user) return;
             setUser(user);
 
-            // Get profile to find member_id
             const { data: profile } = await supabase
-                .from('profiles')
-                .select('member_id, role')
-                .eq('id', user.id)
-                .single();
+                .from('profiles').select('member_id, role').eq('id', user.id).single();
 
             let memberId = profile?.member_id;
 
-            // If no member linked, try to find by email
             if (!memberId && user.email) {
                 const { data: memberByEmail } = await supabase
-                    .from('members')
-                    .select('id')
-                    .eq('email', user.email)
-                    .maybeSingle();
-
+                    .from('members').select('id').eq('email', user.email).maybeSingle();
                 if (memberByEmail) {
-                    console.log('Found unlinked member by email, auto-linking...');
                     memberId = memberByEmail.id;
-                    // Auto-link
-                    await supabase
-                        .from('profiles')
-                        .update({ member_id: memberId })
-                        .eq('id', user.id);
+                    await supabase.from('profiles').update({ member_id: memberId }).eq('id', user.id);
                 }
             }
 
             if (memberId) {
-                // Get member details
                 const { data: memberData } = await supabase
-                    .from('members')
-                    .select('*')
-                    .eq('id', memberId)
-                    .single();
-
+                    .from('members').select('*').eq('id', memberId).single();
                 if (memberData) {
                     setMember(memberData);
-                    setFormData({
-                        name: memberData.name || '',
-                        position: memberData.position || '',
-                        photo_url: memberData.photo_url || '',
-                    });
-
-                    // Load stats
+                    setFormData({ name: memberData.name || '', position: memberData.position || '', photo_url: memberData.photo_url || '' });
                     loadStats(memberId);
                 }
             } else {
-                // If no member found, pre-fill for creation
-                setFormData(prev => ({
-                    ...prev,
-                    name: user.user_metadata?.name || user.email?.split('@')[0] || ''
-                }));
+                setFormData(prev => ({ ...prev, name: user.user_metadata?.name || user.email?.split('@')[0] || '' }));
             }
         } catch (error) {
             console.error('Error loading profile:', error);
@@ -127,70 +99,96 @@ export default function UserProfilePage() {
     };
 
     const loadStats = async (memberId: string) => {
-        // 1. Buscar scouts de rachas (inclui ajustes manuais se o memberId estiver no racha de ajustes)
-        const { data: rachaScouts } = await supabase
-            .from('racha_scouts')
-            .select('goals, assists, difficult_saves, attendance_count')
-            .eq('member_id', memberId);
+        // IDs de ajuste manual
+        const { data: allManualRachas } = await supabase
+            .from('rachas').select('id')
+            .or('name.eq.Ajustes Globais Manuais,location.eq.Sistema (Manual)');
+        const adjustmentIds = new Set((allManualRachas || []).map(r => r.id));
 
-        // 2. Buscar presenças reais em rachas FECHADOS
-        const { count: realParticipations } = await supabase
+        // Stats de rachas
+        const { data: rachaScouts } = await supabase
+            .from('racha_scouts').select('*').eq('member_id', memberId);
+
+        // Stats de campeonatos (apenas finalizados)
+        const { data: champScouts } = await supabase
+            .from('match_player_stats')
+            .select('*, championship_matches!inner(status)')
+            .eq('member_id', memberId);
+        const completedChampScouts = (champScouts || []).filter(s => (s.championship_matches as any)?.status === 'completed');
+
+        // Presenças reais em rachas fechados
+        const { data: attendance } = await supabase
             .from('racha_attendance')
-            .select(`
-                id,
-                rachas!inner (
-                    status,
-                    location
-                )
-            `, { count: 'exact', head: true })
+            .select('racha_id, rachas!inner(status, id)')
             .eq('member_id', memberId)
             .eq('status', 'in')
-            .eq('rachas.status', 'closed')
-            .neq('rachas.location', 'Sistema (Manual)');
+            .eq('rachas.status', 'closed');
+        const realAttendance = (attendance || []).filter(a => !adjustmentIds.has((a.rachas as any).id));
 
-        let totalGoals = 0;
-        let totalAssists = 0;
-        let totalSaves = 0;
-        let manualAttendance = 0;
+        // Destaques
+        const { data: rachasAsTop1 }    = await supabase.from('rachas').select('id').eq('status', 'closed').or(`top1_id.eq.${memberId},top1_extra_id.eq.${memberId},top1_extra2_id.eq.${memberId}`);
+        const { data: rachasAsTop2 }    = await supabase.from('rachas').select('id').eq('status', 'closed').or(`top2_id.eq.${memberId},top2_extra_id.eq.${memberId},top2_extra2_id.eq.${memberId}`);
+        const { data: rachasAsTop3 }    = await supabase.from('rachas').select('id').eq('status', 'closed').or(`top3_id.eq.${memberId},top3_extra_id.eq.${memberId},top3_extra2_id.eq.${memberId}`);
+        const { data: rachasAsSheriff } = await supabase.from('rachas').select('id').eq('status', 'closed').or(`sheriff_id.eq.${memberId},sheriff_extra_id.eq.${memberId},sheriff_extra2_id.eq.${memberId}`);
 
-        rachaScouts?.forEach(s => {
-            totalGoals += s.goals || 0;
-            totalAssists += s.assists || 0;
-            totalSaves += s.difficult_saves || 0;
-            manualAttendance += (s as any).attendance_count || 0;
-        });
+        const manualAdjustments = (rachaScouts || []).filter(s => adjustmentIds.has(s.racha_id));
+        const manualGames   = manualAdjustments.reduce((acc, s) => acc + ((s as any).attendance_count || 0), 0);
+        const manualTop1    = manualAdjustments.reduce((acc, s) => acc + ((s as any).top1_count || 0), 0);
+        const manualTop2    = manualAdjustments.reduce((acc, s) => acc + ((s as any).top2_count || 0), 0);
+        const manualTop3    = manualAdjustments.reduce((acc, s) => acc + ((s as any).top3_count || 0), 0);
+        const manualSheriff = manualAdjustments.reduce((acc, s) => acc + ((s as any).sheriff_count || 0), 0);
 
-        setStats({
-            goals: totalGoals,
-            assists: totalAssists,
-            difficult_saves: totalSaves,
-            participations: (realParticipations || 0) + manualAttendance
-        });
+        const goals    = (rachaScouts || []).reduce((a, s) => a + (s.goals || 0), 0) + completedChampScouts.reduce((a, s) => a + (s.goals || 0), 0);
+        const assists  = (rachaScouts || []).reduce((a, s) => a + (s.assists || 0), 0) + completedChampScouts.reduce((a, s) => a + (s.assists || 0), 0);
+        const saves    = (rachaScouts || []).reduce((a, s) => a + (s.difficult_saves || 0), 0) + completedChampScouts.reduce((a, s) => a + (s.difficult_saves || 0), 0);
+        const warnings = (rachaScouts || []).reduce((a, s) => a + (s.warnings || 0), 0) + completedChampScouts.reduce((a, s) => a + (s.warnings || 0), 0);
+        const matches  = realAttendance.length + manualGames;
+
+        const top1    = ((rachasAsTop1 || []).filter(r => !adjustmentIds.has(r.id)).length) + manualTop1;
+        const top2    = ((rachasAsTop2 || []).filter(r => !adjustmentIds.has(r.id)).length) + manualTop2;
+        const top3    = ((rachasAsTop3 || []).filter(r => !adjustmentIds.has(r.id)).length) + manualTop3;
+        const sheriff = ((rachasAsSheriff || []).filter(r => !adjustmentIds.has(r.id)).length) + manualSheriff;
+
+        // Títulos de campeonato
+        let championships = 0;
+        const { data: completedChamps } = await supabase.from('championships').select('id').eq('status', 'completed');
+        if (completedChamps && completedChamps.length > 0) {
+            for (const champ of completedChamps) {
+                const [{ data: champMatches }, { data: teams }] = await Promise.all([
+                    supabase.from('championship_matches').select('team_a_id, team_b_id, score_a, score_b').eq('championship_id', champ.id).eq('status', 'completed'),
+                    supabase.from('teams').select('id, team_members(member_id)').eq('championship_id', champ.id),
+                ]);
+                if (!champMatches || !teams || teams.length === 0) continue;
+                const standings = teams.map((team: any) => {
+                    let pts = 0;
+                    for (const m of champMatches) {
+                        const isA = m.team_a_id === team.id, isB = m.team_b_id === team.id;
+                        if (!isA && !isB) continue;
+                        const mine = isA ? m.score_a : m.score_b, theirs = isA ? m.score_b : m.score_a;
+                        if (mine > theirs) pts += 3; else if (mine === theirs) pts += 1;
+                    }
+                    return { pts, members: (team.team_members || []).map((tm: any) => tm.member_id) };
+                });
+                standings.sort((a: any, b: any) => b.pts - a.pts);
+                if (standings[0]?.members.includes(memberId)) championships += 1;
+            }
+        }
+
+        setStats({ goals, assists, saves, warnings, matches, top1, top2, top3, sheriff, championships });
     };
 
     const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
-
         const file = e.target.files[0];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-
+        const fileName = `${Math.random()}.${file.name.split('.').pop()}`;
         setSaveStatus('saving');
         try {
-            const { error: uploadError } = await supabase.storage
-                .from('Fotos')
-                .upload(fileName, file);
-
+            const { error: uploadError } = await supabase.storage.from('Fotos').upload(fileName, file);
             if (uploadError) throw uploadError;
-
-            const { data: { publicUrl } } = supabase.storage
-                .from('Fotos')
-                .getPublicUrl(fileName);
-
+            const { data: { publicUrl } } = supabase.storage.from('Fotos').getPublicUrl(fileName);
             setFormData(prev => ({ ...prev, photo_url: publicUrl }));
             setSaveStatus('idle');
-        } catch (error: any) {
-            console.error('Upload error:', error);
+        } catch {
             setSaveStatus('error');
             setTimeout(() => setSaveStatus('idle'), 3000);
         }
@@ -198,89 +196,35 @@ export default function UserProfilePage() {
 
     const handleSave = async () => {
         setSaveStatus('saving');
-
         try {
             if (member) {
-                // Update existing member
-                const { error } = await supabase
-                    .from('members')
-                    .update({
-                        name: formData.name,
-                        position: formData.position,
-                        photo_url: formData.photo_url
-                    })
+                const { error } = await supabase.from('members')
+                    .update({ name: formData.name, position: formData.position, photo_url: formData.photo_url })
                     .eq('id', member.id);
-
                 if (error) throw error;
-                setSaveStatus('success');
-                setTimeout(() => setSaveStatus('idle'), 2000);
             } else {
-                // No member linked
-                if (!formData.name) {
-                    setSaveStatus('error');
-                    setTimeout(() => setSaveStatus('idle'), 2000);
-                    return;
-                }
-
-                // 1. Check if member exists by email
-                const { data: existingMember } = await supabase
-                    .from('members')
-                    .select('*')
-                    .eq('email', user.email)
-                    .maybeSingle();
-
+                if (!formData.name) { setSaveStatus('error'); setTimeout(() => setSaveStatus('idle'), 2000); return; }
+                const { data: existing } = await supabase.from('members').select('*').eq('email', user.email).maybeSingle();
                 let targetMemberId;
-
-                if (existingMember) {
-                    targetMemberId = existingMember.id;
-                    const { error: updateError } = await supabase
-                        .from('members')
-                        .update({
-                            name: formData.name,
-                            position: formData.position,
-                            photo_url: formData.photo_url
-                        })
-                        .eq('id', targetMemberId);
-
-                    if (updateError) throw updateError;
+                if (existing) {
+                    targetMemberId = existing.id;
+                    await supabase.from('members').update({ name: formData.name, position: formData.position, photo_url: formData.photo_url }).eq('id', targetMemberId);
                 } else {
-                    const { data: newMember, error: createError } = await supabase
-                        .from('members')
-                        .insert({
-                            name: formData.name,
-                            position: formData.position,
-                            photo_url: formData.photo_url,
-                            email: user.email
-                        })
-                        .select()
-                        .single();
-
+                    const { data: newMember, error: createError } = await supabase.from('members')
+                        .insert({ name: formData.name, position: formData.position, photo_url: formData.photo_url, email: user.email })
+                        .select().single();
                     if (createError) throw createError;
                     targetMemberId = newMember.id;
                 }
-
-                // 2. Link to profile
-                const { error: linkError } = await supabase
-                    .from('profiles')
-                    .update({ member_id: targetMemberId })
-                    .eq('id', user.id);
-
-                if (linkError) throw linkError;
-
-                // 3. Refresh
-                const { data: finalMember } = await supabase
-                    .from('members')
-                    .select('*')
-                    .eq('id', targetMemberId)
-                    .single();
-
+                await supabase.from('profiles').update({ member_id: targetMemberId }).eq('id', user.id);
+                const { data: finalMember } = await supabase.from('members').select('*').eq('id', targetMemberId).single();
                 setMember(finalMember);
-                setSaveStatus('success');
-                setTimeout(() => setSaveStatus('idle'), 2000);
                 loadProfile();
             }
-        } catch (error: any) {
-            console.error('Save error:', error);
+            setSaveStatus('success');
+            setIsEditing(false);
+            setTimeout(() => setSaveStatus('idle'), 2000);
+        } catch {
             setSaveStatus('error');
             setTimeout(() => setSaveStatus('idle'), 3000);
         }
@@ -288,313 +232,306 @@ export default function UserProfilePage() {
 
     const handleGalleryUpload = async () => {
         if (!galleryFile || !user) return;
-
         setGalleryUploading(true);
         try {
-            const fileExt = galleryFile.name.split('.').pop();
-            const fileName = `${Math.random()}.${fileExt}`;
-
-            // Upload to storage
-            console.log('Uploading to storage bucket "Fotos"...');
-            const { error: uploadError } = await supabase.storage
-                .from('Fotos')
-                .upload(fileName, galleryFile);
-
-            if (uploadError) {
-                console.error('Storage upload error:', uploadError);
-                throw new Error(`Erro no upload: ${uploadError.message}`);
-            }
-
-            // Get public URL
-            const { data: { publicUrl } } = supabase.storage
-                .from('Fotos')
-                .getPublicUrl(fileName);
-
-            console.log('Inserting into database...', { publicUrl, userId: user.id });
-
-            // Insert into database
-            const { error: insertError } = await supabase
-                .from('gallery_media')
-                .insert({
-                    type: galleryType,
-                    url: publicUrl,
-                    caption: galleryCaption || null,
-                    uploaded_by: user.id,
-                });
-
-            if (insertError) {
-                console.error('Database insert error:', insertError);
-                throw new Error(`Erro ao salvar no banco: ${insertError.message}`);
-            }
-
-            // Success!
-            alert('✅ Mídia enviada com sucesso!');
-
-            // Reset form
-            setShowGalleryUpload(false);
-            setGalleryFile(null);
-            setGalleryCaption('');
-            setSaveStatus('success');
-            setTimeout(() => setSaveStatus('idle'), 2000);
-        } catch (error: any) {
-            console.error('Gallery upload error:', error);
-            alert(error.message || 'Erro ao fazer upload');
-            setSaveStatus('error');
-            setTimeout(() => setSaveStatus('idle'), 3000);
+            const fileName = `${Math.random()}.${galleryFile.name.split('.').pop()}`;
+            const { error: uploadError } = await supabase.storage.from('Fotos').upload(fileName, galleryFile);
+            if (uploadError) throw new Error(uploadError.message);
+            const { data: { publicUrl } } = supabase.storage.from('Fotos').getPublicUrl(fileName);
+            const { error: insertError } = await supabase.from('gallery_media').insert({ type: galleryType, url: publicUrl, caption: galleryCaption || null, uploaded_by: user.id });
+            if (insertError) throw new Error(insertError.message);
+            alert('Midia enviada com sucesso!');
+            setShowGalleryUpload(false); setGalleryFile(null); setGalleryCaption('');
+        } catch (err: any) {
+            alert(err.message || 'Erro ao fazer upload');
         } finally {
             setGalleryUploading(false);
         }
     };
 
-    if (loading) return <div className="p-8 text-center">Carregando perfil...</div>;
+    if (loading) return (
+        <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+            <p className="text-gray-400 text-sm">Carregando perfil...</p>
+        </div>
+    );
+
+    const level  = Math.max(1, Math.min(5, member?.level || 1));
+    const border = LEVEL_BORDER[level - 1];
+    const label  = LEVEL_LABEL[level - 1];
+    const rating = LEVEL_RATING[level - 1];
+    const rawPos = formData.position || '';
+    const posLabel = POSITIONS.find(p => p.value === rawPos)?.label || rawPos || 'Sem posição';
+    const points = stats.top1 * 3 + stats.top2 * 2 + stats.top3 + stats.sheriff;
+    const goalsPerGame = stats.matches > 0 ? (stats.goals / stats.matches).toFixed(2) : '0.00';
+    const savesPerGame = stats.matches > 0 ? (stats.saves / stats.matches).toFixed(2) : '0.00';
+
+    const inputClass = "w-full bg-white/5 border border-white/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-white/30 placeholder:text-gray-600";
+    const sectionClass = "rounded-2xl p-5 space-y-4" + " " + "bg-[#0d0d1a] border border-white/7";
 
     return (
-        <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-8">
-            <h1 className="text-3xl font-bold text-gray-800 border-b-4 border-[#af1c15] inline-block pb-2">Meu Perfil</h1>
+        <div className="min-h-screen bg-gray-950 py-10 px-4">
+            <div className="max-w-3xl mx-auto space-y-5">
+                <h1 className="text-2xl font-black text-white tracking-tight">Meu Perfil</h1>
 
-            <div className="grid md:grid-cols-3 gap-8">
-                {/* Left Column: Photo & Basic Info */}
-                <Card className="md:col-span-1 border-none shadow-lg">
-                    <CardContent className="pt-6 flex flex-col items-center text-center">
-                        <div className="relative w-40 h-40 mb-4 group">
-                            <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#093a9f] bg-gray-100 relative">
-                                {formData.photo_url ? (
-                                    <NextImage
-                                        src={formData.photo_url}
-                                        alt={formData.name || 'User'}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                        <User size={64} />
-                                    </div>
+                {/* ── HEADER CARD ── */}
+                <div className="rounded-2xl overflow-hidden" style={{ background: '#0d0d1a', border: `1.5px solid ${border}33`, boxShadow: `0 0 40px ${border}18` }}>
+                    {/* Banner */}
+                    <div className="h-28 relative" style={{ background: `linear-gradient(135deg, ${border}28 0%, #0d0d1a 80%)` }}>
+                        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(255,255,255,.04) 20px,rgba(255,255,255,.04) 40px)' }} />
+                    </div>
+
+                    <div className="px-6 pb-6 -mt-14">
+                        <div className="flex items-end gap-4">
+                            {/* Avatar */}
+                            <div className="relative flex-shrink-0">
+                                <div className="w-24 h-24 rounded-full overflow-hidden" style={{ border: `3px solid ${border}`, boxShadow: `0 0 16px ${border}44` }}>
+                                    {formData.photo_url ? (
+                                        <NextImage src={formData.photo_url} alt={formData.name} width={96} height={96} className="w-full h-full object-cover object-top" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-gray-900">
+                                            <User size={32} className="text-gray-500" />
+                                        </div>
+                                    )}
+                                </div>
+                                {isEditing && (
+                                    <label className="absolute -bottom-1 -right-1 p-1.5 rounded-full cursor-pointer" style={{ background: border }}>
+                                        <Upload size={12} className="text-gray-900" />
+                                        <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={saveStatus === 'saving'} />
+                                    </label>
                                 )}
                             </div>
-                            {isEditing && (
-                                <label className="absolute bottom-0 right-0 bg-[#af1c15] text-white p-2 rounded-full cursor-pointer hover:bg-red-700 transition-colors shadow-md">
-                                    <Upload size={16} />
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="hidden"
-                                        onChange={handlePhotoUpload}
-                                        disabled={saveStatus === 'saving'}
-                                    />
-                                </label>
+
+                            {/* Info */}
+                            <div className="flex-1 pb-1 min-w-0">
+                                <h2 className="text-xl font-black text-white truncate">{formData.name || 'Sem nome'}</h2>
+                                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                    {rawPos && (
+                                        <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: `${border}22`, color: border, border: `1px solid ${border}44` }}>
+                                            {rawPos}
+                                        </span>
+                                    )}
+                                    {member && (
+                                        <>
+                                            <span className="text-xs font-bold" style={{ color: border }}>Nv {level} — {label}</span>
+                                            <span className="text-xs font-black" style={{ color: border }}>{rating}</span>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Botão Editar */}
+                            {!isEditing && (
+                                <button
+                                    onClick={() => setIsEditing(true)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                                    style={{ background: 'rgba(255,255,255,0.06)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.1)' }}
+                                >
+                                    <Edit2 size={12} /> Editar
+                                </button>
                             )}
                         </div>
 
-                        <h2 className="text-xl font-bold text-gray-900">{formData.name || 'Seu Nome'}</h2>
-                        <span className="inline-block bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-semibold mt-2 border border-gray-200">
-                            {POSITIONS.find(p => p.value === formData.position)?.label || formData.position || 'Sem posição'}
-                        </span>
-                    </CardContent>
-                </Card>
+                        {/* 4 stats rápidos */}
+                        <div className="grid grid-cols-4 gap-2 mt-5">
+                            {[
+                                { value: stats.matches,       label: 'Jogos',   color: '#fff' },
+                                { value: stats.goals,         label: 'Gols',    color: '#4ade80' },
+                                { value: stats.assists,       label: 'Assist.', color: '#60a5fa' },
+                                { value: stats.championships, label: 'Títulos', color: '#ffd700' },
+                            ].map(s => (
+                                <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                                    <p className="text-xl font-black leading-none" style={{ color: s.color }}>{s.value}</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wider mt-1.5 text-gray-500">{s.label}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
 
-                {/* Right Column: Edit Form & Stats */}
-                <div className="md:col-span-2 space-y-6">
-                    {/* Stats Cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100">
-                            <CardContent className="p-4 text-center">
-                                <div className="mb-1 flex justify-center text-2xl">⚽</div>
-                                <div className="text-2xl font-bold text-gray-900">{stats.goals}</div>
-                                <div className="text-xs text-gray-500 uppercase font-semibold">Gols</div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-gradient-to-br from-green-50 to-white border-green-100">
-                            <CardContent className="p-4 text-center">
-                                <div className="mb-1 flex justify-center text-2xl">👟</div>
-                                <div className="text-2xl font-bold text-gray-900">{stats.assists}</div>
-                                <div className="text-xs text-gray-500 uppercase font-semibold">Assist.</div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-gradient-to-br from-yellow-50 to-white border-yellow-100">
-                            <CardContent className="p-4 text-center">
-                                <div className="mb-1 flex justify-center text-2xl">🧤</div>
-                                <div className="text-2xl font-bold text-gray-900">{stats.difficult_saves}</div>
-                                <div className="text-xs text-gray-500 uppercase font-semibold">Defesas</div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100">
-                            <CardContent className="p-4 text-center">
-                                <div className="mb-1 flex justify-center text-2xl">🙋‍♂️</div>
-                                <div className="text-2xl font-bold text-gray-900">{stats.participations}</div>
-                                <div className="text-xs text-gray-500 uppercase font-semibold">Jogos</div>
-                            </CardContent>
-                        </Card>
+                {/* ── EDIÇÃO DE PERFIL ── */}
+                {isEditing && (
+                    <div className="rounded-2xl p-5 space-y-4" style={{ background: '#0d0d1a', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Editar Informações</p>
+
+                        <div className="space-y-1.5">
+                            <Label htmlFor="name">Nome Completo</Label>
+                            <input id="name" className={inputClass} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Seu nome completo" disabled={saveStatus === 'saving'} />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label htmlFor="position">Posição Principal</Label>
+                            <select id="position" className={inputClass} value={formData.position} onChange={e => setFormData({ ...formData, position: e.target.value })} disabled={saveStatus === 'saving'}>
+                                <option value="" className="bg-gray-900">Selecione...</option>
+                                {POSITIONS.map(p => <option key={p.value} value={p.value} className="bg-gray-900">{p.label}</option>)}
+                            </select>
+                        </div>
+
+                        <div className="flex gap-2 pt-1">
+                            <button
+                                onClick={handleSave}
+                                disabled={saveStatus === 'saving'}
+                                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-bold transition-opacity disabled:opacity-50"
+                                style={{ background: '#16a34a', color: '#fff' }}
+                            >
+                                <Save size={14} />
+                                {saveStatus === 'saving' ? 'Salvando...' : 'Salvar'}
+                            </button>
+                            <button
+                                onClick={() => { setIsEditing(false); loadProfile(); }}
+                                disabled={saveStatus === 'saving'}
+                                className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-400 transition-colors"
+                                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── STATS: OFENSIVA + DEFESA ── */}
+                <div className="grid sm:grid-cols-2 gap-4">
+                    {/* Produção Ofensiva */}
+                    <div className="rounded-2xl p-5" style={{ background: '#0d0d1a', border: '1px solid rgba(255,255,255,0.07)' }}>
+                        <div className="flex items-center gap-2 mb-4">
+                            <Activity size={13} className="text-green-400" />
+                            <p className="text-[11px] font-bold uppercase tracking-widest text-green-400">Produção Ofensiva</p>
+                        </div>
+                        {[
+                            { label: 'Gols Marcados',      value: stats.goals,   color: '#4ade80' },
+                            { label: 'Assistências',        value: stats.assists, color: '#60a5fa' },
+                            { label: 'Média de Gols/Jogo', value: goalsPerGame,  color: '#fff', bold: true },
+                        ].map((row, i, arr) => (
+                            <div key={row.label} className="flex justify-between items-center py-2.5" style={{ borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                                <span className="text-sm" style={{ color: row.bold ? '#e5e7eb' : '#9ca3af', fontWeight: row.bold ? 700 : 400 }}>{row.label}</span>
+                                <span className="text-lg font-black" style={{ color: row.color }}>{row.value}</span>
+                            </div>
+                        ))}
                     </div>
 
-                    {/* Edit Profile Card */}
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <CardTitle>Informações do Perfil</CardTitle>
-                                {!isEditing && (
-                                    <Button
-                                        onClick={() => setIsEditing(true)}
-                                        variant="outline"
-                                        size="sm"
-                                    >
-                                        <Edit2 size={16} className="mr-2" />
-                                        Editar Perfil
-                                    </Button>
-                                )}
+                    {/* Defesa e Disciplina */}
+                    <div className="rounded-2xl p-5" style={{ background: '#0d0d1a', border: '1px solid rgba(255,255,255,0.07)' }}>
+                        <div className="flex items-center gap-2 mb-4">
+                            <Shield size={13} className="text-purple-400" />
+                            <p className="text-[11px] font-bold uppercase tracking-widest text-purple-400">Defesa e Disciplina</p>
+                        </div>
+                        {[
+                            { label: 'Defesas Difíceis',      value: stats.saves,    color: '#a78bfa' },
+                            { label: 'Cartões / Advertências', value: stats.warnings, color: '#fbbf24' },
+                            { label: 'Média de Defesas/Jogo',  value: savesPerGame,   color: '#fff', bold: true },
+                        ].map((row, i, arr) => (
+                            <div key={row.label} className="flex justify-between items-center py-2.5" style={{ borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                                <span className="text-sm" style={{ color: row.bold ? '#e5e7eb' : '#9ca3af', fontWeight: row.bold ? 700 : 400 }}>{row.label}</span>
+                                <span className="text-lg font-black" style={{ color: row.color }}>{row.value}</span>
                             </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Nome Completo</Label>
-                                {isEditing ? (
-                                    <Input
-                                        id="name"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        placeholder="Seu nome completo"
-                                        disabled={saveStatus === 'saving'}
-                                    />
-                                ) : (
-                                    <div className="px-3 py-2 bg-gray-50 rounded-md border border-gray-200">
-                                        {formData.name || '-'}
-                                    </div>
-                                )}
-                            </div>
+                        ))}
+                    </div>
+                </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="position">Posição Principal</Label>
-                                {isEditing ? (
-                                    <select
-                                        id="position"
-                                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                        value={formData.position}
-                                        onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                                        disabled={saveStatus === 'saving'}
-                                    >
-                                        <option value="">Selecione...</option>
-                                        {POSITIONS.map((pos) => (
-                                            <option key={pos.value} value={pos.value}>
-                                                {pos.label}
-                                            </option>
-                                        ))}
+                {/* ── DESTAQUES ── */}
+                <div className="rounded-2xl p-5" style={{ background: '#0d0d1a', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    <div className="flex items-center gap-2 mb-4">
+                        <Trophy size={13} className="text-yellow-400" />
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-yellow-400">Histórico de Destaques</p>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-3 mb-4">
+                        {[
+                            { icon: Crown,  label: 'Craque', value: stats.top1,    bg: 'rgba(234,179,8,0.1)',   color: '#ca8a04', bdr: 'rgba(234,179,8,0.2)' },
+                            { icon: Star,   label: 'Top 2',  value: stats.top2,    bg: 'rgba(148,163,184,0.1)', color: '#94a3b8', bdr: 'rgba(148,163,184,0.2)' },
+                            { icon: Award,  label: 'Top 3',  value: stats.top3,    bg: 'rgba(234,88,12,0.1)',   color: '#ea580c', bdr: 'rgba(234,88,12,0.2)' },
+                            { icon: Shield, label: 'Xerife', value: stats.sheriff, bg: 'rgba(59,130,246,0.1)',  color: '#3b82f6', bdr: 'rgba(59,130,246,0.2)' },
+                        ].map(d => {
+                            const Icon = d.icon;
+                            return (
+                                <div key={d.label} className="rounded-xl p-3 text-center" style={{ background: d.bg, border: `1px solid ${d.bdr}` }}>
+                                    <Icon size={14} className="mx-auto mb-1.5" style={{ color: d.color }} />
+                                    <p className="text-xl font-black leading-none" style={{ color: d.color }}>{d.value}</p>
+                                    <p className="text-[9px] font-bold uppercase tracking-wider mt-1.5" style={{ color: d.color }}>{d.label}</p>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-xl p-4" style={{ background: 'linear-gradient(135deg, #1d4ed8, #4f46e5)' }}>
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-white/10"><Medal size={16} className="text-white" /></div>
+                            <div>
+                                <p className="text-[9px] font-bold uppercase tracking-widest text-white/60">Pontuação Total</p>
+                                <p className="text-2xl font-black text-white leading-none">{points} pts</p>
+                            </div>
+                        </div>
+                        <p className="text-[9px] text-white/40 text-right hidden sm:block leading-relaxed">
+                            Craque (3) · Top 2 (2)<br />Top 3 (1) · Xerife (1)
+                        </p>
+                    </div>
+                </div>
+
+                {/* ── TÍTULO ── */}
+                {stats.championships > 0 && (
+                    <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.2)' }}>
+                        <Trophy size={32} style={{ color: '#ffd700', flexShrink: 0 }} />
+                        <div>
+                            <p className="text-xl font-black" style={{ color: '#ffd700' }}>{stats.championships}x Campeão</p>
+                            <p className="text-sm text-yellow-700 mt-0.5">Título{stats.championships > 1 ? 's' : ''} de campeonato</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── GALERIA ── */}
+                {member && (
+                    <div className="rounded-2xl p-5" style={{ background: '#0d0d1a', border: '1px solid rgba(255,255,255,0.07)' }}>
+                        <div className="flex items-center gap-2 mb-4">
+                            <Camera size={13} className="text-purple-400" />
+                            <p className="text-[11px] font-bold uppercase tracking-widest text-purple-400">Galeria</p>
+                        </div>
+
+                        {!showGalleryUpload ? (
+                            <button
+                                onClick={() => setShowGalleryUpload(true)}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                                style={{ background: 'rgba(147,51,234,0.15)', color: '#a78bfa', border: '1px solid rgba(147,51,234,0.3)' }}
+                            >
+                                <Upload size={14} /> Enviar Foto / Vídeo
+                            </button>
+                        ) : (
+                            <div className="space-y-3">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="gallery-type">Tipo</Label>
+                                    <select id="gallery-type" className={inputClass} value={galleryType} onChange={e => setGalleryType(e.target.value as 'photo' | 'video')}>
+                                        <option value="photo" className="bg-gray-900">Foto</option>
+                                        <option value="video" className="bg-gray-900">Vídeo</option>
                                     </select>
-                                ) : (
-                                    <div className="px-3 py-2 bg-gray-50 rounded-md border border-gray-200">
-                                        {POSITIONS.find(p => p.value === formData.position)?.label || '-'}
-                                    </div>
-                                )}
-                            </div>
-
-                            {isEditing && (
-                                <div className="flex gap-2 pt-2">
-                                    <Button
-                                        onClick={async () => {
-                                            await handleSave();
-                                            if (saveStatus === 'success') {
-                                                setIsEditing(false);
-                                            }
-                                        }}
-                                        disabled={saveStatus === 'saving'}
-                                        className="flex-1 bg-green-600 hover:bg-green-700"
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="gallery-file">Arquivo</Label>
+                                    <input id="gallery-file" type="file" accept={galleryType === 'photo' ? 'image/*' : 'video/*'} onChange={e => setGalleryFile(e.target.files?.[0] || null)} className={inputClass + " cursor-pointer"} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="gallery-caption">Legenda (opcional)</Label>
+                                    <input id="gallery-caption" className={inputClass} value={galleryCaption} onChange={e => setGalleryCaption(e.target.value)} placeholder="Descrição da foto/vídeo" />
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleGalleryUpload}
+                                        disabled={!galleryFile || galleryUploading}
+                                        className="flex-1 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
+                                        style={{ background: 'rgba(147,51,234,0.3)', color: '#a78bfa', border: '1px solid rgba(147,51,234,0.4)' }}
                                     >
-                                        <Save size={18} className="mr-2" />
-                                        {saveStatus === 'saving' ? 'Salvando...' : 'Salvar Alterações'}
-                                    </Button>
-                                    <Button
-                                        onClick={() => {
-                                            setIsEditing(false);
-                                            loadProfile();
-                                        }}
-                                        variant="outline"
-                                        disabled={saveStatus === 'saving'}
+                                        {galleryUploading ? 'Enviando...' : 'Enviar'}
+                                    </button>
+                                    <button
+                                        onClick={() => { setShowGalleryUpload(false); setGalleryFile(null); setGalleryCaption(''); }}
+                                        disabled={galleryUploading}
+                                        className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-400"
+                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
                                     >
                                         Cancelar
-                                    </Button>
+                                    </button>
                                 </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Gallery Upload */}
-                    {member && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Camera size={20} />
-                                    Galeria
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {!showGalleryUpload ? (
-                                    <Button
-                                        onClick={() => setShowGalleryUpload(true)}
-                                        className="w-full bg-purple-600 hover:bg-purple-700"
-                                    >
-                                        <Upload size={18} className="mr-2" />
-                                        Enviar Foto/Vídeo para Galeria
-                                    </Button>
-                                ) : (
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="gallery-type">Tipo</Label>
-                                            <select
-                                                id="gallery-type"
-                                                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                                value={galleryType}
-                                                onChange={(e) => setGalleryType(e.target.value as 'photo' | 'video')}
-                                            >
-                                                <option value="photo">Foto</option>
-                                                <option value="video">Vídeo</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="gallery-file">Arquivo</Label>
-                                            <Input
-                                                id="gallery-file"
-                                                type="file"
-                                                accept={galleryType === 'photo' ? 'image/*' : 'video/*'}
-                                                onChange={(e) => setGalleryFile(e.target.files?.[0] || null)}
-                                                className="cursor-pointer"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="gallery-caption">Legenda (opcional)</Label>
-                                            <Input
-                                                id="gallery-caption"
-                                                value={galleryCaption}
-                                                onChange={(e) => setGalleryCaption(e.target.value)}
-                                                placeholder="Descrição da foto/vídeo"
-                                            />
-                                        </div>
-
-                                        <div className="flex gap-2">
-                                            <Button
-                                                onClick={handleGalleryUpload}
-                                                disabled={!galleryFile || galleryUploading}
-                                                className="flex-1 bg-purple-600 hover:bg-purple-700"
-                                            >
-                                                {galleryUploading ? 'Enviando...' : 'Enviar'}
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => {
-                                                    setShowGalleryUpload(false);
-                                                    setGalleryFile(null);
-                                                    setGalleryCaption('');
-                                                }}
-                                                disabled={galleryUploading}
-                                            >
-                                                Cancelar
-                                            </Button>
-                                        </div>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    )}
-                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

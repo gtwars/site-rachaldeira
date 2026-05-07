@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Search, Users, Loader2, Plus, Minus, CheckCircle, RefreshCcw } from 'lucide-react';
+import { Search, Users, Loader2, Plus, Minus, CheckCircle, RefreshCcw, Trophy } from 'lucide-react';
 
 export default function EdicaoScoutsPage() {
     const [members, setMembers] = useState<any[]>([]);
@@ -53,7 +53,7 @@ export default function EdicaoScoutsPage() {
             // 2. Buscar membros ativos
             const { data: membersData } = await supabase
                 .from('members')
-                .select('id, name, position')
+                .select('id, name, position, championship_wins')
                 .eq('is_active', true)
                 .order('name');
 
@@ -126,7 +126,9 @@ export default function EdicaoScoutsPage() {
                     total_top1,
                     total_top2,
                     total_top3,
-                    total_sheriff
+                    total_sheriff,
+                    // Títulos (campo direto no members)
+                    championship_wins: m.championship_wins || 0,
                 };
             }) || [];
 
@@ -254,6 +256,37 @@ export default function EdicaoScoutsPage() {
         }
     };
 
+    const updateChampionshipWins = async (memberId: string, delta: number) => {
+        setSavingId(`${memberId}-championships`);
+        const supabase = createClient();
+        try {
+            const member = members.find(m => m.id === memberId);
+            const newValue = Math.max(0, (member.championship_wins || 0) + delta);
+            const { error } = await supabase.from('members').update({ championship_wins: newValue }).eq('id', memberId);
+            if (error) throw error;
+            setMembers(prev => prev.map(m => m.id === memberId ? { ...m, championship_wins: newValue } : m));
+        } catch (error: any) {
+            console.error('Erro ao salvar títulos:', error);
+        } finally {
+            setSavingId(null);
+        }
+    };
+
+    const updateChampionshipWinsDirect = async (memberId: string, value: number) => {
+        setSavingId(`${memberId}-championships`);
+        const supabase = createClient();
+        try {
+            const newValue = Math.max(0, value);
+            const { error } = await supabase.from('members').update({ championship_wins: newValue }).eq('id', memberId);
+            if (error) throw error;
+            setMembers(prev => prev.map(m => m.id === memberId ? { ...m, championship_wins: newValue } : m));
+        } catch (error: any) {
+            console.error('Erro ao salvar títulos:', error);
+        } finally {
+            setSavingId(null);
+        }
+    };
+
     const filteredMembers = members.filter(m =>
         m.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -309,6 +342,7 @@ export default function EdicaoScoutsPage() {
                                     <TableHead className="text-center font-bold text-slate-500 uppercase text-[10px] tracking-widest">Top 2</TableHead>
                                     <TableHead className="text-center font-bold text-slate-500 uppercase text-[10px] tracking-widest">Top 3</TableHead>
                                     <TableHead className="text-center font-bold text-slate-500 uppercase text-[10px] tracking-widest">Xerife</TableHead>
+                                    <TableHead className="text-center font-bold text-yellow-600 uppercase text-[10px] tracking-widest">🏆 Títulos</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -327,6 +361,7 @@ export default function EdicaoScoutsPage() {
                                         <TableCell><ScoutCell member={member} field="top2" onUpdate={updateScoutValue} onDirectUpdate={handleDirectUpdate} isSaving={savingId?.startsWith(`${member.id}-top2`)} /></TableCell>
                                         <TableCell><ScoutCell member={member} field="top3" onUpdate={updateScoutValue} onDirectUpdate={handleDirectUpdate} isSaving={savingId?.startsWith(`${member.id}-top3`)} /></TableCell>
                                         <TableCell><ScoutCell member={member} field="sheriff" onUpdate={updateScoutValue} onDirectUpdate={handleDirectUpdate} isSaving={savingId?.startsWith(`${member.id}-sheriff`)} /></TableCell>
+                                        <TableCell><ChampCell member={member} onUpdate={updateChampionshipWins} onDirectUpdate={updateChampionshipWinsDirect} isSaving={savingId?.startsWith(`${member.id}-championships`)} /></TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -342,6 +377,59 @@ export default function EdicaoScoutsPage() {
                 <p className="text-emerald-800 text-sm font-bold">
                     Salvamento Automático Ativo! Cada alteração é salva instantaneamente no banco de dados. Você também pode digitar os valores diretamente nos campos.
                 </p>
+            </div>
+        </div>
+    );
+}
+
+function ChampCell({ member, onUpdate, onDirectUpdate, isSaving }: any) {
+    const [localValue, setLocalValue] = useState(member.championship_wins || 0);
+
+    useEffect(() => {
+        setLocalValue(member.championship_wins || 0);
+    }, [member.championship_wins]);
+
+    const handleBlur = () => {
+        const numValue = parseInt(localValue);
+        if (!isNaN(numValue) && numValue !== member.championship_wins) {
+            onDirectUpdate(member.id, numValue);
+        } else {
+            setLocalValue(member.championship_wins || 0);
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+    };
+
+    return (
+        <div className="flex flex-col items-center justify-center gap-1">
+            <div className="flex items-center gap-1">
+                <button
+                    onClick={() => onUpdate(member.id, -1)}
+                    className="w-7 h-7 flex items-center justify-center rounded-full bg-yellow-50 text-yellow-600 hover:bg-red-100 hover:text-red-600 transition-colors shadow-sm disabled:opacity-50"
+                    disabled={isSaving}
+                >
+                    <Minus size={14} />
+                </button>
+                <input
+                    type="text"
+                    value={isSaving ? '...' : localValue}
+                    onChange={e => setLocalValue(e.target.value)}
+                    onBlur={handleBlur}
+                    onKeyDown={handleKeyDown}
+                    disabled={isSaving}
+                    className={`w-11 h-8 text-center rounded-lg font-black text-sm border-2 bg-white transition-all
+                        ${isSaving ? 'border-dashed border-yellow-400 text-yellow-400 bg-yellow-50' : 'border-yellow-200 text-yellow-700 focus:border-yellow-500 focus:ring-0 focus:outline-none'}
+                    `}
+                />
+                <button
+                    onClick={() => onUpdate(member.id, 1)}
+                    className="w-7 h-7 flex items-center justify-center rounded-full bg-yellow-500 text-white hover:bg-yellow-600 transition-colors shadow-sm disabled:opacity-50"
+                    disabled={isSaving}
+                >
+                    <Plus size={14} />
+                </button>
             </div>
         </div>
     );

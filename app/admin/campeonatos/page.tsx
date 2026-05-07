@@ -158,13 +158,18 @@ export default function AdminCampeonatosPage() {
             await supabase.from('teams').delete().eq('championship_id', id);
 
             // Excluir campeonato
-            const { error } = await supabase
+            const { data: deleted, error } = await supabase
                 .from('championships')
                 .delete()
-                .eq('id', id);
+                .eq('id', id)
+                .select();
 
             if (error) throw error;
-            
+
+            if (!deleted || deleted.length === 0) {
+                throw new Error('Sem permissão para excluir. Verifique as políticas RLS no Supabase (falta política DELETE na tabela championships).');
+            }
+
             loadChampionships();
             alert('Campeonato excluído com sucesso!');
         } catch (err: any) {

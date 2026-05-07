@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent } from '@/components/ui/card';
-import { Trophy, History, Calendar, MapPin, ArrowRight } from 'lucide-react';
+import { Trophy, History, Calendar, MapPin, ArrowRight, Medal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default async function CampeonatosPage() {
@@ -52,7 +52,7 @@ export default async function CampeonatosPage() {
                                             {/* Top Promotional Logo Area */}
                                             <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-8 flex items-center justify-center border-b border-gray-100">
                                                 {camp.logo_url ? (
-                                                    <div className="relative w-32 h-32 transform group-hover:scale-110 transition-transform duration-500">
+                                                    <div className="relative w-48 h-48 transform group-hover:scale-105 transition-transform duration-500">
                                                         <img src={camp.logo_url} className="w-full h-full object-contain filter drop-shadow-xl" alt="" />
                                                     </div>
                                                 ) : (
@@ -105,13 +105,21 @@ export default async function CampeonatosPage() {
                 {/* Histórico */}
                 {(pastChampionships.length > 0 || activeChampionships.length === 0) && (
                     <section>
-                        <div className="flex items-center gap-3 mb-8 border-b border-gray-200 pb-4">
-                            <div className="bg-gray-100 p-2 rounded-lg">
-                                <History className="text-gray-700" size={24} />
+                        <div className="flex items-center justify-between gap-3 mb-8 border-b border-gray-200 pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-gray-100 p-2 rounded-lg">
+                                    <History className="text-gray-700" size={24} />
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-800">
+                                    Galeria de Campeões (Histórico)
+                                </h2>
                             </div>
-                            <h2 className="text-2xl font-bold text-gray-800">
-                                Galeria de Campeões (Histórico)
-                            </h2>
+                            <Link href="/campeonatos/trofeus">
+                                <Button variant="outline" className="gap-2 rounded-full text-sm">
+                                    <Medal size={15} />
+                                    Ver Troféus
+                                </Button>
+                            </Link>
                         </div>
 
                         {pastChampionships.length > 0 ? (

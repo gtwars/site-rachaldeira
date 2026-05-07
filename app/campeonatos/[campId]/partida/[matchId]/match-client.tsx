@@ -2,503 +2,363 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { Trophy, Shield, Activity, Plus, Minus, User, CheckCircle, ArrowRight } from 'lucide-react';
+import { Trophy, Shield, Plus, Minus, User, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
-interface Player {
-    id: string;
-    name: string;
-    position: string;
-}
-
-interface Team {
-    id: string;
-    name: string;
-    logo_url?: string;
-    players: Player[];
-}
-
-interface MatchStats {
-    member_id: string;
-    goals: number;
-    assists: number;
-    yellow_cards: number;
-    red_cards: number;
-}
-
+interface Player { id: string; name: string; position: string; }
+interface Team { id: string; name: string; logo_url?: string; players: Player[]; }
+interface MatchStats { member_id: string; goals: number; assists: number; yellow_cards: number; red_cards: number; }
 interface MatchClientProps {
-    matchId: string;
-    campId: string;
-    initialMatch: any;
-    teamA: Team;
-    teamB: Team;
-    initialStats: MatchStats[];
-    isAdmin: boolean;
-    championshipFormat?: string;
+    matchId: string; campId: string; initialMatch: any;
+    teamA: Team; teamB: Team; initialStats: MatchStats[];
+    isAdmin: boolean; championshipFormat?: string;
 }
 
-// Mapping: from bracket_position → which next match and which slot (team_a or team_b)
 function getNextBracketInfo(bracketPosition: string, format?: string): { nextPosition: string; slot: 'team_a_id' | 'team_b_id' } | null {
     const is6Teams = format === 'tournament_6_teams';
-
-    if (bracketPosition === 'qf-1') {
-        return {
-            nextPosition: is6Teams ? 'semi-2' : 'semi-1',
-            slot: is6Teams ? 'team_b_id' : 'team_a_id'
-        };
-    }
-    if (bracketPosition === 'qf-2') {
-        return {
-            nextPosition: is6Teams ? 'semi-1' : 'semi-1',
-            slot: 'team_b_id'
-        };
-    }
+    if (bracketPosition === 'qf-1') return { nextPosition: is6Teams ? 'semi-2' : 'semi-1', slot: is6Teams ? 'team_b_id' : 'team_a_id' };
+    if (bracketPosition === 'qf-2') return { nextPosition: 'semi-1', slot: 'team_b_id' };
     if (bracketPosition === 'qf-3') return { nextPosition: 'semi-2', slot: 'team_a_id' };
     if (bracketPosition === 'qf-4') return { nextPosition: 'semi-2', slot: 'team_b_id' };
-
-    // Semifinais → Final
     if (bracketPosition === 'semi-1') return { nextPosition: 'final-1', slot: 'team_a_id' };
     if (bracketPosition === 'semi-2') return { nextPosition: 'final-1', slot: 'team_b_id' };
-
     return null;
 }
 
 function getBracketLabel(pos: string): string {
-    if (pos?.startsWith('qf-')) return `Quartas de Final ${pos.split('-')[1]}`;
-    if (pos?.startsWith('semi-')) return `Semifinal ${pos.split('-')[1]}`;
+    if (pos?.startsWith('qf-')) return `Quartas de Final`;
+    if (pos?.startsWith('semi-')) return `Semifinal`;
     if (pos === 'final-1') return 'Grande Final';
     return '';
+}
+
+function TeamLogo({ url, name, size = 'md' }: { url?: string; name: string; size?: 'sm' | 'md' | 'lg' }) {
+    const sz = size === 'lg' ? 'w-20 h-20' : size === 'md' ? 'w-12 h-12' : 'w-8 h-8';
+    return url ? (
+        <img src={url} alt={name} className={`${sz} object-contain`} />
+    ) : (
+        <div className={`${sz} rounded-full bg-gray-100 flex items-center justify-center`}>
+            <Shield size={size === 'lg' ? 28 : size === 'md' ? 18 : 14} className="text-gray-300" />
+        </div>
+    );
 }
 
 export default function MatchClient({ matchId, campId, initialMatch, teamA, teamB, initialStats, isAdmin, championshipFormat }: MatchClientProps) {
     const [match, setMatch] = useState(initialMatch);
     const [stats, setStats] = useState<MatchStats[]>(initialStats);
-    const [loading, setLoading] = useState(false);
     const [advancingTeam, setAdvancingTeam] = useState<string | null>(null);
     const supabase = createClient();
 
     const isBracketMatch = !!match.bracket_position;
     const bracketLabel = getBracketLabel(match.bracket_position);
+    const isCompleted = match.status === 'completed';
+    const isLive = match.status === 'in_progress';
+
+    const scoreA = match.score_a || 0;
+    const scoreB = match.score_b || 0;
+    const winnerA = isCompleted && (scoreA > scoreB || (scoreA === scoreB && match.penalty_winner_id === teamA.id));
+    const winnerB = isCompleted && (scoreB > scoreA || (scoreA === scoreB && match.penalty_winner_id === teamB.id));
+    const hasPenalties = scoreA === scoreB && (match.penalties_score_a > 0 || match.penalties_score_b > 0);
 
     useEffect(() => {
-        // Realtime para estatísticas dos jogadores
-        const statsChannel = supabase
-            .channel('match-stats')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'match_player_stats',
-                    filter: `match_id=eq.${matchId}`
-                },
-                (payload) => {
-                    if (payload.eventType === 'INSERT') {
-                        setStats(prev => [...prev, payload.new as MatchStats]);
-                    } else if (payload.eventType === 'UPDATE') {
-                        setStats(prev => prev.map(s => s.member_id === payload.new.member_id ? payload.new as MatchStats : s));
-                    }
-                }
-            )
-            .subscribe();
+        const statsChannel = supabase.channel('match-stats')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'match_player_stats', filter: `match_id=eq.${matchId}` }, (payload) => {
+                if (payload.eventType === 'INSERT') setStats(prev => [...prev, payload.new as MatchStats]);
+                else if (payload.eventType === 'UPDATE') setStats(prev => prev.map(s => s.member_id === payload.new.member_id ? payload.new as MatchStats : s));
+            }).subscribe();
 
-        // Realtime para o placar da partida
-        const matchChannel = supabase
-            .channel('match-score')
-            .on(
-                'postgres_changes',
-                {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'championship_matches',
-                    filter: `id=eq.${matchId}`
-                },
-                (payload) => {
-                    setMatch(payload.new);
-                }
-            )
-            .subscribe();
+        const matchChannel = supabase.channel('match-score')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'championship_matches', filter: `id=eq.${matchId}` }, (payload) => {
+                setMatch(payload.new);
+            }).subscribe();
 
-        return () => {
-            supabase.removeChannel(statsChannel);
-            supabase.removeChannel(matchChannel);
-        };
+        return () => { supabase.removeChannel(statsChannel); supabase.removeChannel(matchChannel); };
     }, [matchId]);
 
-    const getPlayerStats = (memberId: string) => {
-        return stats.find(s => s.member_id === memberId) || {
-            member_id: memberId,
-            goals: 0,
-            assists: 0,
-            yellow_cards: 0,
-            red_cards: 0
-        };
-    };
+    const getPlayerStats = (memberId: string) =>
+        stats.find(s => s.member_id === memberId) || { member_id: memberId, goals: 0, assists: 0, yellow_cards: 0, red_cards: 0 };
 
     const handleStatUpdate = async (memberId: string, teamId: string, field: keyof MatchStats, delta: number) => {
         if (!isAdmin) return;
-
-        const { data: existing } = await supabase
-            .from('match_player_stats')
-            .select('*')
-            .eq('match_id', matchId)
-            .eq('member_id', memberId)
-            .single();
-
+        const { data: existing } = await supabase.from('match_player_stats').select('*').eq('match_id', matchId).eq('member_id', memberId).single();
         const currentVal = existing ? existing[field] : 0;
         const newVal = currentVal + delta;
-
         if (newVal < 0) return;
-
-        const payload = {
-            match_id: matchId,
-            member_id: memberId,
-            team_id: teamId,
-            [field]: newVal
-        };
-
-        if (existing) {
-            await supabase.from('match_player_stats').update({ [field]: newVal }).eq('id', existing.id);
-        } else {
-            await supabase.from('match_player_stats').insert(payload);
-        }
-
+        const payload = { match_id: matchId, member_id: memberId, team_id: teamId, [field]: newVal };
+        if (existing) await supabase.from('match_player_stats').update({ [field]: newVal }).eq('id', existing.id);
+        else await supabase.from('match_player_stats').insert(payload);
         if (field === 'goals') {
-            const isTeamA = teamId === teamA.id;
-            const scoreField = isTeamA ? 'score_a' : 'score_b';
-            const newMatchScore = (match[scoreField] || 0) + delta;
-            await supabase.from('championship_matches').update({ [scoreField]: newMatchScore }).eq('id', matchId);
+            const scoreField = teamId === teamA.id ? 'score_a' : 'score_b';
+            await supabase.from('championship_matches').update({ [scoreField]: (match[scoreField] || 0) + delta }).eq('id', matchId);
         }
     };
 
-    // Classificar time vencedor e avançar para a próxima fase
     const handleAdvanceTeam = async (winnerTeamId: string) => {
         if (!isAdmin || !isBracketMatch) return;
-
-        const bracketPos = match.bracket_position;
-        const nextInfo = getNextBracketInfo(bracketPos, championshipFormat);
-
+        const nextInfo = getNextBracketInfo(match.bracket_position, championshipFormat);
         if (!nextInfo) {
-            // É a final - apenas encerrar o jogo
-            // Marcar como completed
-            await supabase
-                .from('championship_matches')
-                .update({ status: 'completed' })
-                .eq('id', matchId);
-
-            alert('🏆 Campeonato finalizado! O campeão foi definido!');
+            await supabase.from('championship_matches').update({ status: 'completed' }).eq('id', matchId);
+            alert('Campeonato finalizado! O campeão foi definido!');
             return;
         }
-
         setAdvancingTeam(winnerTeamId);
-
         try {
-            // 1. Marcar partida atual como completed
-            await supabase
-                .from('championship_matches')
-                .update({ status: 'completed' })
-                .eq('id', matchId);
-
-            // 2. Encontrar a próxima partida pelo bracket_position
-            const { data: nextMatch } = await supabase
-                .from('championship_matches')
-                .select('*')
-                .eq('championship_id', match.championship_id)
-                .eq('bracket_position', nextInfo.nextPosition)
-                .single();
-
-            if (nextMatch) {
-                // 3. Atualizar a próxima partida com o time classificado
-                await supabase
-                    .from('championship_matches')
-                    .update({ [nextInfo.slot]: winnerTeamId })
-                    .eq('id', nextMatch.id);
-            }
-
+            await supabase.from('championship_matches').update({ status: 'completed' }).eq('id', matchId);
+            const { data: nextMatch } = await supabase.from('championship_matches').select('*').eq('championship_id', match.championship_id).eq('bracket_position', nextInfo.nextPosition).single();
+            if (nextMatch) await supabase.from('championship_matches').update({ [nextInfo.slot]: winnerTeamId }).eq('id', nextMatch.id);
             const winnerName = winnerTeamId === teamA.id ? teamA.name : teamB.name;
-            const nextLabel = getBracketLabel(nextInfo.nextPosition);
-            alert(`✅ ${winnerName} classificado para ${nextLabel}!`);
-
+            alert(`${winnerName} classificado para ${getBracketLabel(nextInfo.nextPosition)}!`);
         } catch (err: any) {
             alert('Erro ao classificar time: ' + err.message);
-        } finally {
-            setAdvancingTeam(null);
-        }
+        } finally { setAdvancingTeam(null); }
     };
 
-    // Encerrar partida (não-bracket)
     const handleFinishMatch = async () => {
         if (!isAdmin) return;
         if (!confirm('Encerrar esta partida?')) return;
-
-        await supabase
-            .from('championship_matches')
-            .update({ status: 'completed' })
-            .eq('id', matchId);
+        await supabase.from('championship_matches').update({ status: 'completed' }).eq('id', matchId);
     };
 
-    const renderTeamStats = (team: Team) => (
-        <Card className="flex-1">
-            <CardHeader className="bg-gray-50 border-b pb-4">
-                <div className="flex items-center gap-4">
-                    {team.logo_url ? (
-                        <img src={team.logo_url} className="w-12 h-12 object-contain" />
-                    ) : (
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                            <Shield className="text-gray-400" />
+    const renderTeamTable = (team: Team) => (
+        <div className="flex-1 min-w-0 rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm">
+            {/* Header do time */}
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 bg-gray-50">
+                <TeamLogo url={team.logo_url} name={team.name} size="sm" />
+                <span className="font-black text-gray-900 text-base tracking-tight">{team.name}</span>
+            </div>
+
+            {/* Cabeçalho da tabela */}
+            <div className="grid px-5 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-400" style={{ gridTemplateColumns: '1fr 52px 52px 60px' }}>
+                <span>Jogador</span>
+                <span className="text-center">Gols</span>
+                <span className="text-center">Assis.</span>
+                <span className="text-center">Cartões</span>
+            </div>
+
+            {/* Linhas */}
+            <div className="divide-y divide-gray-50">
+                {team.players.map(player => {
+                    const ps = getPlayerStats(player.id);
+                    const hasActivity = ps.goals > 0 || ps.assists > 0 || ps.yellow_cards > 0 || ps.red_cards > 0;
+                    return (
+                        <div
+                            key={player.id}
+                            className={`grid px-5 py-3 items-center ${hasActivity ? 'bg-blue-50/40' : 'hover:bg-gray-50'}`}
+                            style={{ gridTemplateColumns: '1fr 52px 52px 60px' }}
+                        >
+                            {/* Nome */}
+                            <div className="flex items-center gap-2 min-w-0">
+                                <User size={12} className="text-gray-300 flex-shrink-0" />
+                                <span className="text-sm font-semibold text-gray-900 truncate">{player.name}</span>
+                                {player.position && <span className="text-[10px] text-gray-400 uppercase hidden sm:inline">{player.position}</span>}
+                            </div>
+
+                            {/* Gols */}
+                            <div className="flex items-center justify-center gap-1">
+                                {false && (
+                                    <button onClick={() => handleStatUpdate(player.id, team.id, 'goals', -1)} disabled={ps.goals <= 0} className="text-gray-300 hover:text-red-400 disabled:opacity-20 transition-colors">
+                                        <Minus size={11} />
+                                    </button>
+                                )}
+                                <span className={`text-sm font-black w-5 text-center ${ps.goals > 0 ? 'text-gray-900' : 'text-gray-300'}`}>{ps.goals}</span>
+                                {false && (
+                                    <button onClick={() => handleStatUpdate(player.id, team.id, 'goals', 1)} className="text-gray-300 hover:text-green-500 transition-colors">
+                                        <Plus size={11} />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Assistências */}
+                            <div className="flex items-center justify-center gap-1">
+                                {false && (
+                                    <button onClick={() => handleStatUpdate(player.id, team.id, 'assists', -1)} disabled={ps.assists <= 0} className="text-gray-300 hover:text-red-400 disabled:opacity-20 transition-colors">
+                                        <Minus size={11} />
+                                    </button>
+                                )}
+                                <span className={`text-sm font-black w-5 text-center ${ps.assists > 0 ? 'text-gray-900' : 'text-gray-300'}`}>{ps.assists}</span>
+                                {false && (
+                                    <button onClick={() => handleStatUpdate(player.id, team.id, 'assists', 1)} className="text-gray-300 hover:text-green-500 transition-colors">
+                                        <Plus size={11} />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Cartões */}
+                            <div className="flex items-center justify-center gap-1.5">
+                                {false ? (
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-0.5">
+                                            <button onClick={() => handleStatUpdate(player.id, team.id, 'yellow_cards', -1)} disabled={ps.yellow_cards <= 0} className="text-gray-300 hover:text-red-400 disabled:opacity-20"><Minus size={9} /></button>
+                                            <div className={`w-3 h-4 rounded-sm mx-0.5 ${ps.yellow_cards > 0 ? 'bg-yellow-400' : 'bg-gray-200'}`} />
+                                            <button onClick={() => handleStatUpdate(player.id, team.id, 'yellow_cards', 1)} className="text-gray-300 hover:text-yellow-500"><Plus size={9} /></button>
+                                            {ps.yellow_cards > 0 && <span className="text-[9px] font-black text-yellow-600 ml-0.5">{ps.yellow_cards}</span>}
+                                        </div>
+                                        <div className="flex items-center gap-0.5">
+                                            <button onClick={() => handleStatUpdate(player.id, team.id, 'red_cards', -1)} disabled={ps.red_cards <= 0} className="text-gray-300 hover:text-red-400 disabled:opacity-20"><Minus size={9} /></button>
+                                            <div className={`w-3 h-4 rounded-sm mx-0.5 ${ps.red_cards > 0 ? 'bg-red-500' : 'bg-gray-200'}`} />
+                                            <button onClick={() => handleStatUpdate(player.id, team.id, 'red_cards', 1)} className="text-gray-300 hover:text-red-500"><Plus size={9} /></button>
+                                            {ps.red_cards > 0 && <span className="text-[9px] font-black text-red-500 ml-0.5">{ps.red_cards}</span>}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-1">
+                                        {ps.yellow_cards > 0 && (
+                                            <div className="flex items-center gap-0.5">
+                                                <div className="w-2.5 h-3.5 bg-yellow-400 rounded-sm" />
+                                                <span className="text-[9px] font-black text-yellow-600">{ps.yellow_cards}</span>
+                                            </div>
+                                        )}
+                                        {ps.red_cards > 0 && (
+                                            <div className="flex items-center gap-0.5">
+                                                <div className="w-2.5 h-3.5 bg-red-500 rounded-sm" />
+                                                <span className="text-[9px] font-black text-red-500">{ps.red_cards}</span>
+                                            </div>
+                                        )}
+                                        {ps.yellow_cards === 0 && ps.red_cards === 0 && (
+                                            <span className="text-gray-300 text-xs">—</span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    )}
-                    <div>
-                        <CardTitle className="text-xl">{team.name}</CardTitle>
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent className="p-0">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Jogador</TableHead>
-                            <TableHead className="text-center w-24">Gols</TableHead>
-                            <TableHead className="text-center w-24">Assis.</TableHead>
-                            <TableHead className="text-center w-20">Cartões</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {team.players.map(player => {
-                            const pStats = getPlayerStats(player.id);
-                            return (
-                                <TableRow key={player.id}>
-                                    <TableCell className="font-medium flex items-center gap-2">
-                                        <User size={14} className="text-gray-400" />
-                                        {player.name}
-                                        <span className="text-xs text-gray-500 font-normal">{player.position}</span>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <div className="flex items-center justify-center gap-2">
-                                            {isAdmin && match.status !== 'completed' && (
-                                                <button onClick={() => handleStatUpdate(player.id, team.id, 'goals', -1)} className="text-gray-300 hover:text-red-500 disabled:opacity-50" disabled={pStats.goals <= 0}><Minus size={14} /></button>
-                                            )}
-                                            <span className={`font-bold ${pStats.goals > 0 ? 'text-gray-900' : 'text-gray-300'}`}>{pStats.goals}</span>
-                                            {isAdmin && match.status !== 'completed' && (
-                                                <button onClick={() => handleStatUpdate(player.id, team.id, 'goals', 1)} className="text-gray-300 hover:text-green-500"><Plus size={14} /></button>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <div className="flex items-center justify-center gap-2">
-                                            {isAdmin && match.status !== 'completed' && (
-                                                <button onClick={() => handleStatUpdate(player.id, team.id, 'assists', -1)} className="text-gray-300 hover:text-red-500 disabled:opacity-50" disabled={pStats.assists <= 0}><Minus size={14} /></button>
-                                            )}
-                                            <span className={`font-bold ${pStats.assists > 0 ? 'text-gray-900' : 'text-gray-300'}`}>{pStats.assists}</span>
-                                            {isAdmin && match.status !== 'completed' && (
-                                                <button onClick={() => handleStatUpdate(player.id, team.id, 'assists', 1)} className="text-gray-300 hover:text-green-500"><Plus size={14} /></button>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <div className="flex items-center justify-center gap-2">
-                                            {isAdmin && match.status !== 'completed' ? (
-                                                <div className="flex flex-col gap-1">
-                                                    <div className="flex items-center gap-1">
-                                                        <button onClick={() => handleStatUpdate(player.id, team.id, 'yellow_cards', -1)} className="text-gray-300 hover:text-red-500" disabled={pStats.yellow_cards <= 0}><Minus size={10} /></button>
-                                                        <div className={`w-4 h-6 rounded-sm border ${pStats.yellow_cards > 0 ? 'bg-yellow-400 border-yellow-500' : 'bg-transparent border-gray-300'}`} title="Amarelo" />
-                                                        <button onClick={() => handleStatUpdate(player.id, team.id, 'yellow_cards', 1)} className="text-gray-300 hover:text-green-500"><Plus size={10} /></button>
-                                                        <span className="text-[10px] font-bold min-w-[12px]">{pStats.yellow_cards}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <button onClick={() => handleStatUpdate(player.id, team.id, 'red_cards', -1)} className="text-gray-300 hover:text-red-500" disabled={pStats.red_cards <= 0}><Minus size={10} /></button>
-                                                        <div className={`w-4 h-6 rounded-sm border ${pStats.red_cards > 0 ? 'bg-red-500 border-red-600' : 'bg-transparent border-gray-300'}`} title="Vermelho" />
-                                                        <button onClick={() => handleStatUpdate(player.id, team.id, 'red_cards', 1)} className="text-gray-300 hover:text-green-500"><Plus size={10} /></button>
-                                                        <span className="text-[10px] font-bold min-w-[12px]">{pStats.red_cards}</span>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="flex gap-2">
-                                                    {pStats.yellow_cards > 0 && <div className="flex items-center gap-1"><div className="w-3 h-4 bg-yellow-400 rounded-sm" /> <span className="text-[10px] font-bold">{pStats.yellow_cards}</span></div>}
-                                                    {pStats.red_cards > 0 && <div className="flex items-center gap-1"><div className="w-3 h-4 bg-red-500 rounded-sm" /> <span className="text-[10px] font-bold">{pStats.red_cards}</span></div>}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
+                    );
+                })}
+            </div>
+        </div>
     );
 
     return (
-        <div className="space-y-8">
-            {/* Voltar */}
-            <div>
-                <Link href={`/campeonatos/${campId}`} className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1">
-                    ← Voltar ao Campeonato
+        <div className="min-h-screen bg-gray-50 py-8 px-4">
+            <div className="max-w-5xl mx-auto space-y-6">
+
+                {/* Voltar */}
+                <Link href={`/campeonatos/${campId}`} className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                    <ArrowLeft size={14} /> Voltar ao Campeonato
                 </Link>
-            </div>
 
-            {/* Badge de Fase (Bracket) */}
-            {isBracketMatch && (
-                <div className="text-center">
-                    <span className="inline-block bg-gradient-to-r from-amber-100 to-amber-50 border border-amber-300 text-amber-800 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider">
-                        🏅 {bracketLabel}
-                    </span>
-                </div>
-            )}
-
-            {/* Placar */}
-            <Card className="bg-gradient-to-br from-[#093a9f] to-blue-900 text-white border-none shadow-lg">
-                <CardContent className="p-8">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                        {/* Time A */}
-                        <div className="flex flex-col items-center flex-1">
-                            <h2 className="text-2xl font-bold text-center mb-2">{teamA.name}</h2>
-                            {teamA.logo_url && <img src={teamA.logo_url} className="w-20 h-20 object-contain bg-white rounded-full p-2" />}
-                        </div>
-
-                        {/* Placar Central */}
-                        <div className="flex flex-col items-center gap-2">
-                            <div className="flex items-center gap-6">
-                                <span className="text-6xl md:text-8xl font-bold font-mono">{match.score_a || 0}</span>
-                                <span className="text-4xl text-blue-300">X</span>
-                                <span className="text-6xl md:text-8xl font-bold font-mono">{match.score_b || 0}</span>
-                            </div>
-                            {match.score_a === match.score_b && (match.penalties_score_a > 0 || match.penalties_score_b > 0) && (
-                                <div className="mt-2 text-amber-400 font-bold bg-black/30 px-4 py-1 rounded-full border border-amber-400/30">
-                                    Pênaltis: {match.penalties_score_a} - {match.penalties_score_b}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Time B */}
-                        <div className="flex flex-col items-center flex-1">
-                            <h2 className="text-2xl font-bold text-center mb-2">{teamB.name}</h2>
-                            {teamB.logo_url && <img src={teamB.logo_url} className="w-20 h-20 object-contain bg-white rounded-full p-2" />}
-                        </div>
-                    </div>
-
-                    <div className="text-center mt-6">
-                        <span className={`px-4 py-1 rounded-full text-sm font-semibold uppercase tracking-wider ${match.status === 'in_progress' ? 'bg-green-500 text-white animate-pulse' :
-                            match.status === 'completed' ? 'bg-gray-600 text-gray-200' : 'bg-blue-800 text-blue-200'
-                            }`}>
-                            {match.status === 'in_progress' ? '● Ao Vivo' :
-                                match.status === 'completed' ? 'Fim de Jogo' : 'Agendado'}
+                {/* Badge de fase */}
+                {isBracketMatch && (
+                    <div className="text-center">
+                        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest text-yellow-400 border border-yellow-400/30 bg-yellow-400/10">
+                            <Trophy size={12} /> {bracketLabel}
                         </span>
                     </div>
-                </CardContent>
-            </Card>
+                )}
 
-            {/* Botões de Classificação para Mata-Mata */}
-            {isAdmin && isBracketMatch && match.status !== 'completed' && (
-                <Card className="border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-yellow-50">
-                    <CardContent className="p-6">
-                        <div className="text-center mb-4">
-                            <h3 className="text-lg font-bold text-amber-800 flex items-center justify-center gap-2">
-                                <Trophy size={20} className="text-amber-600" />
-                                Quem passa para a próxima fase?
-                            </h3>
-                            <p className="text-sm text-amber-600 mt-1">
-                                {match.bracket_position === 'final-1'
-                                    ? 'Selecione o campeão!'
-                                    : `Clique no time vencedor para avançar para ${getBracketLabel(getNextBracketInfo(match.bracket_position)?.nextPosition || '')}`
-                                }
-                            </p>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                            <button
-                                onClick={() => handleAdvanceTeam(teamA.id)}
-                                disabled={!!advancingTeam}
-                                className="group relative w-full sm:w-auto flex items-center gap-3 px-6 py-4 bg-white border-2 border-gray-200 rounded-xl hover:border-green-400 hover:bg-green-50 hover:shadow-lg transition-all duration-200 disabled:opacity-50"
-                            >
-                                {teamA.logo_url ? (
-                                    <img src={teamA.logo_url} className="w-10 h-10 object-contain rounded-full border" />
-                                ) : (
-                                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                                        <Shield size={18} className="text-gray-400" />
-                                    </div>
+                {/* ── PLACAR ── */}
+                <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0d1f40 50%, #0a1628 100%)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div className="px-6 py-8">
+                        <div className="grid grid-cols-3 items-center gap-4">
+                            {/* Time A */}
+                            <div className={`flex flex-col items-center gap-3 transition-opacity ${isCompleted && !winnerA ? 'opacity-40' : 'opacity-100'}`}>
+                                <TeamLogo url={teamA.logo_url} name={teamA.name} size="lg" />
+                                <p className="font-black text-white text-center text-sm sm:text-base leading-tight">{teamA.name}</p>
+                                {winnerA && (
+                                    <span className="text-[10px] font-black text-green-400 bg-green-400/10 border border-green-400/30 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                        Vencedor
+                                    </span>
                                 )}
-                                <div className="text-left">
-                                    <p className="font-bold text-gray-900 group-hover:text-green-700">{teamA.name}</p>
-                                    <p className="text-xs text-gray-500">Classificar →</p>
+                            </div>
+
+                            {/* Placar central */}
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="flex items-center gap-3 sm:gap-5">
+                                    <span className={`text-5xl sm:text-7xl font-black tabular-nums ${winnerA ? 'text-white' : isCompleted ? 'text-gray-500' : 'text-white'}`}>{scoreA}</span>
+                                    <span className="text-xl font-bold text-gray-600">×</span>
+                                    <span className={`text-5xl sm:text-7xl font-black tabular-nums ${winnerB ? 'text-white' : isCompleted ? 'text-gray-500' : 'text-white'}`}>{scoreB}</span>
                                 </div>
-                                <ArrowRight size={20} className="text-gray-300 group-hover:text-green-500 ml-2 transition-colors" />
-                                {advancingTeam === teamA.id && (
-                                    <div className="absolute inset-0 bg-green-100/80 rounded-xl flex items-center justify-center">
-                                        <span className="text-green-700 font-semibold animate-pulse">Classificando...</span>
-                                    </div>
-                                )}
-                            </button>
 
-                            <span className="text-gray-400 font-bold text-lg">ou</span>
+                                {hasPenalties && (
+                                    <div className="text-xs font-bold text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 px-3 py-1 rounded-full">
+                                        Pênaltis: {match.penalties_score_a} – {match.penalties_score_b}
+                                    </div>
+                                )}
 
-                            <button
-                                onClick={() => handleAdvanceTeam(teamB.id)}
-                                disabled={!!advancingTeam}
-                                className="group relative w-full sm:w-auto flex items-center gap-3 px-6 py-4 bg-white border-2 border-gray-200 rounded-xl hover:border-green-400 hover:bg-green-50 hover:shadow-lg transition-all duration-200 disabled:opacity-50"
-                            >
-                                {teamB.logo_url ? (
-                                    <img src={teamB.logo_url} className="w-10 h-10 object-contain rounded-full border" />
-                                ) : (
-                                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                                        <Shield size={18} className="text-gray-400" />
-                                    </div>
+                                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
+                                    isLive ? 'bg-green-500/20 text-green-400 border border-green-500/30 animate-pulse' :
+                                    isCompleted ? 'bg-white/5 text-gray-400 border border-white/10' :
+                                    'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                }`}>
+                                    {isLive ? '● Ao Vivo' : isCompleted ? 'Fim de Jogo' : 'Agendado'}
+                                </span>
+                            </div>
+
+                            {/* Time B */}
+                            <div className={`flex flex-col items-center gap-3 transition-opacity ${isCompleted && !winnerB ? 'opacity-40' : 'opacity-100'}`}>
+                                <TeamLogo url={teamB.logo_url} name={teamB.name} size="lg" />
+                                <p className="font-black text-white text-center text-sm sm:text-base leading-tight">{teamB.name}</p>
+                                {winnerB && (
+                                    <span className="text-[10px] font-black text-green-400 bg-green-400/10 border border-green-400/30 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                        Vencedor
+                                    </span>
                                 )}
-                                <div className="text-left">
-                                    <p className="font-bold text-gray-900 group-hover:text-green-700">{teamB.name}</p>
-                                    <p className="text-xs text-gray-500">Classificar →</p>
-                                </div>
-                                <ArrowRight size={20} className="text-gray-300 group-hover:text-green-500 ml-2 transition-colors" />
-                                {advancingTeam === teamB.id && (
-                                    <div className="absolute inset-0 bg-green-100/80 rounded-xl flex items-center justify-center">
-                                        <span className="text-green-700 font-semibold animate-pulse">Classificando...</span>
-                                    </div>
-                                )}
-                            </button>
+                            </div>
                         </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Resultado da classificação se completado */}
-            {isBracketMatch && match.status === 'completed' && (
-                <div className="text-center">
-                    <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-5 py-2 rounded-full text-sm font-semibold border border-green-200">
-                        <CheckCircle size={18} />
-                        Partida encerrada — Time classificado avançou para a próxima fase
                     </div>
                 </div>
-            )}
 
-            {/* Botão Encerrar Partida (não-bracket) */}
-            {isAdmin && !isBracketMatch && match.status !== 'completed' && (
-                <div className="text-center">
-                    <Button
-                        onClick={handleFinishMatch}
-                        size="lg"
-                        className="bg-red-600 hover:bg-red-700 text-white"
-                    >
-                        <CheckCircle size={20} className="mr-2" />
-                        Encerrar Partida
-                    </Button>
+                {/* ── CLASSIFICAR (Mata-mata) ── */}
+                {isAdmin && isBracketMatch && !isCompleted && (
+                    <div className="rounded-2xl p-5" style={{ background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.2)' }}>
+                        <p className="text-center text-xs font-black uppercase tracking-widest text-yellow-400 mb-4">
+                            {match.bracket_position === 'final-1' ? 'Selecione o Campeão' : `Quem avança para ${getBracketLabel(getNextBracketInfo(match.bracket_position)?.nextPosition || '')}?`}
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                            {[teamA, teamB].map(team => (
+                                <button
+                                    key={team.id}
+                                    onClick={() => handleAdvanceTeam(team.id)}
+                                    disabled={!!advancingTeam}
+                                    className="relative flex items-center gap-3 px-5 py-3.5 rounded-xl transition-all disabled:opacity-50 group"
+                                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                    onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(234,179,8,0.5)')}
+                                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+                                >
+                                    <TeamLogo url={team.logo_url} name={team.name} size="sm" />
+                                    <div className="text-left">
+                                        <p className="font-black text-white text-sm">{team.name}</p>
+                                        <p className="text-[10px] text-gray-500">Classificar →</p>
+                                    </div>
+                                    <ArrowRight size={16} className="text-gray-600 ml-auto" />
+                                    {advancingTeam === team.id && (
+                                        <div className="absolute inset-0 rounded-xl bg-yellow-400/10 flex items-center justify-center">
+                                            <span className="text-yellow-400 text-xs font-bold animate-pulse">Classificando...</span>
+                                        </div>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Partida bracket encerrada */}
+                {isBracketMatch && isCompleted && (
+                    <div className="text-center">
+                        <span className="inline-flex items-center gap-2 text-xs font-semibold text-green-400 bg-green-400/10 border border-green-400/20 px-4 py-2 rounded-full">
+                            <CheckCircle size={14} /> Partida encerrada
+                        </span>
+                    </div>
+                )}
+
+                {/* Encerrar partida não-bracket */}
+                {isAdmin && !isBracketMatch && !isCompleted && (
+                    <div className="text-center">
+                        <button
+                            onClick={handleFinishMatch}
+                            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-colors"
+                            style={{ background: '#dc2626' }}
+                        >
+                            <CheckCircle size={16} /> Encerrar Partida
+                        </button>
+                    </div>
+                )}
+
+                {/* ── TABELAS DE SCOUTS ── */}
+                <div className="flex flex-col lg:flex-row gap-4">
+                    {renderTeamTable(teamA)}
+                    {renderTeamTable(teamB)}
                 </div>
-            )}
-
-            {/* Scouts */}
-            <div className="flex flex-col lg:flex-row gap-6">
-                {renderTeamStats(teamA)}
-                {renderTeamStats(teamB)}
             </div>
-
-            {isAdmin && match.status !== 'completed' && (
-                <div className="text-center text-sm text-gray-500 mt-8">
-                    <p>Modo Administrador: Clique nos botões + e - para atualizar as estatísticas em tempo real.</p>
-                </div>
-            )}
         </div>
     );
 }

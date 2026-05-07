@@ -111,21 +111,33 @@ export default async function Home() {
                     sizes="100vw"
                 />
 
-                {/* Overlay Escuro */}
-                <div className="absolute inset-0 bg-black/50 z-0"></div>
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70 z-0" />
 
                 {/* Conteúdo Hero */}
-                <div className="relative z-10 animate-fade-in-up flex flex-col items-center">
-                    <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-md">
-                        Bem-vindo ao Rachaldeira
+                <div className="relative z-10 animate-fade-in-up flex flex-col items-center gap-6">
+                    <h1 className="text-5xl md:text-7xl font-black mb-0 drop-shadow-lg tracking-tight">
+                        Rachaldeira
                     </h1>
-                    <p className="text-xl md:text-2xl text-gray-100 max-w-2xl mx-auto drop-shadow-sm font-light">
+                    <p className="text-lg md:text-2xl text-white/80 max-w-xl mx-auto font-light tracking-wide">
                         Resenha, amizade e futebol levado a sério.
                     </p>
+                    <div className="flex gap-3 mt-2">
+                        <Link href="/rachas">
+                            <Button className="bg-white !text-gray-900 hover:bg-gray-100 font-bold px-6 rounded-full shadow-lg">
+                                Próximo Racha
+                            </Button>
+                        </Link>
+                        <Link href="/campeonatos">
+                            <Button variant="outline" className="border-white/50 text-white hover:bg-white/10 font-semibold px-6 rounded-full backdrop-blur-sm">
+                                Campeonatos
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 py-12 w-full space-y-12">
+            <div className="max-w-7xl mx-auto px-4 py-14 w-full space-y-14">
 
                 {/* Destaques da Semana (Último Racha) */}
                 {weeklyHighlights && (
@@ -297,11 +309,14 @@ export default async function Home() {
 
                 {/* Próximos Rachas */}
                 <section>
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                            <CalendarDays className="text-[#093a9f]" />
-                            Próximos Rachas
-                        </h2>
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-3">
+                            <div className="w-1 h-8 bg-[#093a9f] rounded-full" />
+                            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                                <CalendarDays className="text-[#093a9f]" size={22} />
+                                Próximos Rachas
+                            </h2>
+                        </div>
                     </div>
                     {rachas && rachas.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -354,10 +369,9 @@ export default async function Home() {
 
                 {/* História do Grupo */}
                 <section>
-                    <div className="text-center mb-8">
-                        <h2 className="text-3xl font-bold text-gray-800 relative inline-block pb-2 border-b-4 border-[#af1c15]">
-                            Nossa História
-                        </h2>
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="w-1 h-8 bg-[#af1c15] rounded-full" />
+                        <h2 className="text-2xl font-bold text-gray-900">Nossa História</h2>
                     </div>
                     <Card className="border-none shadow-md bg-white/80 overflow-hidden">
                         <CardContent className="p-0">
@@ -404,10 +418,13 @@ export default async function Home() {
                 <div className="grid md:grid-cols-2 gap-8">
                     {/* Campeonatos */}
                     <section>
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                            <Trophy className="text-[#af1c15]" />
-                            Campeonatos
-                        </h2>
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-1 h-8 bg-[#af1c15] rounded-full" />
+                            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                                <Trophy className="text-[#af1c15]" size={22} />
+                                Campeonatos
+                            </h2>
+                        </div>
                         {campeonatos && campeonatos.length > 0 ? (
                             <div className="space-y-4">
                                 {campeonatos.map((camp) => (
@@ -443,10 +460,13 @@ export default async function Home() {
 
                     {/* Instagram */}
                     <section className="flex flex-col">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                            <Instagram className="text-pink-500" />
-                            Rede Social
-                        </h2>
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-1 h-8 bg-pink-500 rounded-full" />
+                            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                                <Instagram className="text-pink-500" size={22} />
+                                Rede Social
+                            </h2>
+                        </div>
                         <Card className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none shadow-lg h-full">
                             <CardContent className="p-6 flex flex-col items-center justify-center text-center h-full">
                                 <Instagram size={32} className="mb-3" />

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, CalendarDays, Trophy, BarChart3, Award, LogOut, Settings, Menu, X, User, Image as ImageIcon } from 'lucide-react';
+import { Home, Users, CalendarDays, Trophy, BarChart3, Award, LogOut, Settings, Menu, X, User, Image as ImageIcon, Medal } from 'lucide-react';
 import NextImage from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,7 @@ export function Navbar({ user, profile, member }: NavbarProps) {
         { href: '/integrantes', label: 'Integrantes', icon: Users },
         { href: '/rachas', label: 'Rachas', icon: CalendarDays },
         { href: '/campeonatos', label: 'Campeonatos', icon: Trophy },
+        { href: '/campeonatos/trofeus', label: 'Troféus', icon: Medal },
         { href: '/galeria', label: 'Galeria', icon: ImageIcon },
         { href: '/stats/2026', label: 'Estatísticas', icon: BarChart3 },
         { href: '/rank', label: 'Ranking', icon: Award },
@@ -64,19 +65,22 @@ export function Navbar({ user, profile, member }: NavbarProps) {
                         </Link>
 
                         {/* Desktop Navigation */}
-                        <div className="hidden lg:flex items-center gap-1">
+                        <div className="hidden lg:flex items-center gap-0.5">
                             {navLinks.map((link) => {
-                                const isActive = pathname === link.href;
+                                const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
                                 return (
                                     <Link
                                         key={link.href}
                                         href={link.href}
-                                        className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${isActive
-                                            ? 'bg-blue-800 text-white shadow-sm'
-                                            : 'text-blue-100 hover:bg-blue-800/50 hover:text-white'
+                                        className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
+                                            ? 'text-white'
+                                            : 'text-blue-100/80 hover:text-white hover:bg-white/10'
                                             }`}
                                     >
-                                        <span>{link.label}</span>
+                                        {isActive && (
+                                            <span className="absolute inset-0 rounded-lg bg-white/15 ring-1 ring-white/20" />
+                                        )}
+                                        <span className="relative">{link.label}</span>
                                     </Link>
                                 );
                             })}
