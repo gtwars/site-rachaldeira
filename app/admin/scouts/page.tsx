@@ -54,7 +54,6 @@ export default function EdicaoScoutsPage() {
             const { data: membersData } = await supabase
                 .from('members')
                 .select('id, name, position, championship_wins')
-                .eq('is_active', true)
                 .order('name');
 
             // 3. Buscar Dados de TODO o sistema

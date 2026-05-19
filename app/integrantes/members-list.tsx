@@ -196,7 +196,6 @@ function FifaCard({ member, canEdit, onLevelChange, onOpen }: { member: Member; 
     const faceBase: React.CSSProperties = {
         position: 'absolute', inset: 0, borderRadius: '16px',
         backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
-        overflow: 'hidden',
     };
 
     return (
@@ -204,7 +203,8 @@ function FifaCard({ member, canEdit, onLevelChange, onOpen }: { member: Member; 
             <div className="transition-transform duration-300 group-hover:scale-[1.04] group-hover:-translate-y-1" style={cardStyle}>
 
                 {/* ── FRENTE ── */}
-                <div style={{ ...faceBase, border: `2px solid ${border}`, boxShadow: `0 0 16px ${border}44, 0 8px 32px rgba(0,0,0,0.85)`, background: '#0d0d1a', pointerEvents: flipped ? 'none' : 'auto' }}>
+                <div style={{ ...faceBase, border: `2px solid ${border}`, boxShadow: `0 0 16px ${border}44, 0 8px 32px rgba(0,0,0,0.85)`, pointerEvents: flipped ? 'none' : 'auto' }}>
+                <div style={{ position: 'absolute', inset: 0, borderRadius: '16px', overflow: 'hidden', background: '#0d0d1a' }}>
                     {/* Foto */}
                     <div style={{ position: 'absolute', top: 0, left: '26%', right: 0, height: '62%', overflow: 'hidden' }}>
                         {member.photo_url
@@ -279,10 +279,12 @@ function FifaCard({ member, canEdit, onLevelChange, onOpen }: { member: Member; 
                             <span style={{ fontSize: 'clamp(6px, 1.6vw, 8px)', fontWeight: 700, color: border, textTransform: 'uppercase', letterSpacing: '0.08em', filter: `drop-shadow(0 0 4px ${border}66)` }}>{label}</span>
                         </div>
                     </div>
+                </div>{/* fecha inner overflow wrapper frente */}
                 </div>
 
                 {/* ── VERSO ── */}
-                <div style={{ ...faceBase, transform: 'rotateY(180deg)', border: `2px solid ${border}`, boxShadow: `0 0 16px ${border}44, 0 8px 32px rgba(0,0,0,0.85)`, background: '#0d0d1a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0, padding: '12% 8%', pointerEvents: flipped ? 'auto' : 'none' }}>
+                <div style={{ ...faceBase, transform: 'rotateY(180deg)', border: `2px solid ${border}`, boxShadow: `0 0 16px ${border}44, 0 8px 32px rgba(0,0,0,0.85)`, pointerEvents: flipped ? 'auto' : 'none' }}>
+                <div style={{ position: 'absolute', inset: 0, borderRadius: '16px', overflow: 'hidden', background: '#0d0d1a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0, padding: '12% 8%' }}>
                     {/* Foto circular */}
                     <div style={{ width: '40%', aspectRatio: '1', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${border}`, marginBottom: '6%', flexShrink: 0 }}>
                         {member.photo_url
@@ -324,6 +326,7 @@ function FifaCard({ member, canEdit, onLevelChange, onOpen }: { member: Member; 
                     >
                         Abrir perfil completo
                     </button>
+                </div>{/* fecha inner overflow wrapper verso */}
                 </div>
 
             </div>
