@@ -50,12 +50,24 @@ export default function EdicaoScoutsPage() {
             }
             setAdjustmentRachaId(adjRacha?.id || null);
 
-            // 2. Buscar membros ativos
-            const { data: membersData, error: membersError } = await supabase
+            // 2. Buscar membros ativos (championship_wins pode não existir — tenta com, senão sem)
+            let membersData: any[] | null = null;
+            const { data: membersWithWins, error: membersError } = await supabase
                 .from('members')
                 .select('id, name, position, championship_wins')
                 .order('name');
-            if (membersError) throw new Error('Erro ao buscar membros: ' + membersError.message);
+
+            if (membersError) {
+                console.warn('Coluna championship_wins ausente, buscando sem ela:', membersError.message);
+                const { data: membersFallback, error: membersFallbackError } = await supabase
+                    .from('members')
+                    .select('id, name, position')
+                    .order('name');
+                if (membersFallbackError) throw new Error('Erro ao buscar membros: ' + membersFallbackError.message);
+                membersData = membersFallback;
+            } else {
+                membersData = membersWithWins;
+            }
             console.log('Membros carregados:', membersData?.length);
 
             // 3. Buscar Dados de TODO o sistema
