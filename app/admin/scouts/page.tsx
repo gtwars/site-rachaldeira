@@ -86,7 +86,49 @@ export default function EdicaoScoutsPage() {
                 : { data: [], error: null };
             if (attendanceError) console.error('Erro attendance:', attendanceError);
 
-            // 4. Consolidar
+            // 4. Calcular vitórias de campeonato (igual à página de integrantes)
+            const champWinsMap: Record<string, number> = {};
+            const { data: completedChamps } = await supabase
+                .from('championships')
+                .select('id')
+                .eq('status', 'completed');
+
+            if (completedChamps && completedChamps.length > 0) {
+                for (const champ of completedChamps) {
+                    const [{ data: champMatches }, { data: teams }] = await Promise.all([
+                        supabase.from('championship_matches')
+                            .select('team_a_id, team_b_id, score_a, score_b')
+                            .eq('championship_id', champ.id)
+                            .eq('status', 'completed'),
+                        supabase.from('teams')
+                            .select('id, team_members(member_id)')
+                            .eq('championship_id', champ.id),
+                    ]);
+                    if (!champMatches || !teams || teams.length === 0) continue;
+                    const standings = teams.map((team: any) => {
+                        let pts = 0;
+                        for (const m of champMatches) {
+                            const isA = m.team_a_id === team.id;
+                            const isB = m.team_b_id === team.id;
+                            if (!isA && !isB) continue;
+                            const mine = isA ? m.score_a : m.score_b;
+                            const theirs = isA ? m.score_b : m.score_a;
+                            if (mine > theirs) pts += 3;
+                            else if (mine === theirs) pts += 1;
+                        }
+                        return { pts, members: (team.team_members || []).map((tm: any) => tm.member_id) };
+                    });
+                    standings.sort((a: any, b: any) => b.pts - a.pts);
+                    const winner = standings[0];
+                    if (winner) {
+                        for (const memberId of winner.members) {
+                            champWinsMap[memberId] = (champWinsMap[memberId] || 0) + 1;
+                        }
+                    }
+                }
+            }
+
+            // 5. Consolidar
             const consolidated = membersData?.map(m => {
                 const rScouts = allRachaScouts?.filter(s => s.member_id === m.id) || [];
                 const cScouts = champScouts?.filter(s => s.member_id === m.id) || [];
@@ -133,8 +175,8 @@ export default function EdicaoScoutsPage() {
                     total_top2,
                     total_top3,
                     total_sheriff,
-                    // Títulos (coluna não existe no DB ainda — sempre 0)
-                    championship_wins: 0,
+                            // Títulos calculados via standings de campeonatos
+                    championship_wins: champWinsMap[m.id] || 0,
                 };
             }) || [];
 
@@ -368,7 +410,10 @@ export default function EdicaoScoutsPage() {
                                         <TableCell><ScoutCell member={member} field="top2" onUpdate={updateScoutValue} onDirectUpdate={handleDirectUpdate} isSaving={savingId?.startsWith(`${member.id}-top2`)} /></TableCell>
                                         <TableCell><ScoutCell member={member} field="top3" onUpdate={updateScoutValue} onDirectUpdate={handleDirectUpdate} isSaving={savingId?.startsWith(`${member.id}-top3`)} /></TableCell>
                                         <TableCell><ScoutCell member={member} field="sheriff" onUpdate={updateScoutValue} onDirectUpdate={handleDirectUpdate} isSaving={savingId?.startsWith(`${member.id}-sheriff`)} /></TableCell>
-                                        <TableCell><ChampCell member={member} onUpdate={updateChampionshipWins} onDirectUpdate={updateChampionshipWinsDirect} isSaving={savingId?.startsWith(`${member.id}-championships`)} /></TableCell>
+                                        <TableCell className="text-center">
+                                            <span className="font-black text-yellow-700 text-lg">{member.championship_wins || 0}</span>
+                                            {member.championship_wins > 0 && <span className="ml-1 text-sm">🏆</span>}
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
