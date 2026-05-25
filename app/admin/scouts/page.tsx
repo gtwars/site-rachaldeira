@@ -54,6 +54,7 @@ export default function EdicaoScoutsPage() {
             const { data: membersData, error: membersError } = await supabase
                 .from('members')
                 .select('id, name, position')
+                .eq('is_active', true)
                 .order('name');
             if (membersError) throw new Error('Erro ao buscar membros: ' + membersError.message);
             console.log('Membros carregados:', membersData?.length);
