@@ -50,24 +50,12 @@ export default function EdicaoScoutsPage() {
             }
             setAdjustmentRachaId(adjRacha?.id || null);
 
-            // 2. Buscar membros ativos (championship_wins pode não existir — tenta com, senão sem)
-            let membersData: any[] | null = null;
-            const { data: membersWithWins, error: membersError } = await supabase
+            // 2. Buscar membros ativos
+            const { data: membersData, error: membersError } = await supabase
                 .from('members')
-                .select('id, name, position, championship_wins')
+                .select('id, name, position')
                 .order('name');
-
-            if (membersError) {
-                console.warn('Coluna championship_wins ausente, buscando sem ela:', membersError.message);
-                const { data: membersFallback, error: membersFallbackError } = await supabase
-                    .from('members')
-                    .select('id, name, position')
-                    .order('name');
-                if (membersFallbackError) throw new Error('Erro ao buscar membros: ' + membersFallbackError.message);
-                membersData = membersFallback;
-            } else {
-                membersData = membersWithWins;
-            }
+            if (membersError) throw new Error('Erro ao buscar membros: ' + membersError.message);
             console.log('Membros carregados:', membersData?.length);
 
             // 3. Buscar Dados de TODO o sistema
@@ -144,8 +132,8 @@ export default function EdicaoScoutsPage() {
                     total_top2,
                     total_top3,
                     total_sheriff,
-                    // Títulos (campo direto no members)
-                    championship_wins: m.championship_wins || 0,
+                    // Títulos (coluna não existe no DB ainda — sempre 0)
+                    championship_wins: 0,
                 };
             }) || [];
 
