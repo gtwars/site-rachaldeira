@@ -21,6 +21,7 @@ export default function ScoutsPage({ params }: { params: Promise<{ rachaId: stri
     const [saving, setSaving] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [addMemberId, setAddMemberId] = useState('');
     const [highlights, setHighlights] = useState({
         top1_id: '',
         top1_extra_id: '',
@@ -162,9 +163,23 @@ export default function ScoutsPage({ params }: { params: Promise<{ rachaId: stri
         });
     };
 
-    // Função de carregar dados já lida com a lista. Avulsos desativados conforme pedido.
-    const addPlayerToScouts = async (memberId: string) => {
-        alert('Funcionalidade de Avulso desativada. Apenas jogadores confirmados aparecem na lista.');
+    const handleAddPlayerManually = async () => {
+        if (!addMemberId) return;
+        const alreadyIn = scouts.some(s => s.member_id === addMemberId);
+        if (alreadyIn) {
+            alert('Este jogador já está na lista de presentes.');
+            return;
+        }
+        const supabase = createClient();
+        const { error } = await supabase
+            .from('racha_attendance')
+            .upsert({ racha_id: rachaId, member_id: addMemberId, status: 'in' }, { onConflict: 'racha_id,member_id' });
+        if (error) {
+            alert('Erro ao adicionar jogador: ' + error.message);
+            return;
+        }
+        setAddMemberId('');
+        loadData();
     };
 
     const filteredScouts = scouts.filter(s => {
@@ -393,6 +408,29 @@ export default function ScoutsPage({ params }: { params: Promise<{ rachaId: stri
                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                                     className="pl-4"
                                 />
+                            </div>
+                            <div className="flex gap-2 w-full sm:w-auto">
+                                <Select value={addMemberId} onValueChange={setAddMemberId}>
+                                    <SelectTrigger className="w-full sm:w-48">
+                                        <SelectValue placeholder="Adicionar jogador..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {members
+                                            .filter(m => !scouts.some(s => s.member_id === m.id))
+                                            .map(m => (
+                                                <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                                <Button
+                                    onClick={handleAddPlayerManually}
+                                    disabled={!addMemberId}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold shrink-0"
+                                    title="Adicionar jogador à lista de presentes"
+                                >
+                                    <Plus size={16} className="mr-1" />
+                                    Adicionar
+                                </Button>
                             </div>
                         </div>
                     </CardHeader>
