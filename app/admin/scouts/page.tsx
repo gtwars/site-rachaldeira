@@ -51,10 +51,12 @@ export default function EdicaoScoutsPage() {
             setAdjustmentRachaId(adjRacha?.id || null);
 
             // 2. Buscar membros ativos
-            const { data: membersData } = await supabase
+            const { data: membersData, error: membersError } = await supabase
                 .from('members')
                 .select('id, name, position, championship_wins')
                 .order('name');
+            if (membersError) throw new Error('Erro ao buscar membros: ' + membersError.message);
+            console.log('Membros carregados:', membersData?.length);
 
             // 3. Buscar Dados de TODO o sistema
             const { data: allRachas } = await supabase
@@ -64,20 +66,24 @@ export default function EdicaoScoutsPage() {
             const allRachaIds = allRachas?.map(r => r.id) || [];
             const closedRachaIds = allRachas?.filter(r => r.status === 'closed' && r.location !== 'Sistema (Manual)').map(r => r.id) || [];
 
-            const { data: allRachaScouts } = await supabase
-                .from('racha_scouts')
-                .select('*')
-                .in('racha_id', allRachaIds);
+            const { data: allRachaScouts, error: scoutsError } = allRachaIds.length > 0
+                ? await supabase.from('racha_scouts').select('*').in('racha_id', allRachaIds)
+                : { data: [], error: null };
+            if (scoutsError) console.error('Erro racha_scouts:', scoutsError);
 
-            const { data: champScouts } = await supabase
-                .from('match_player_stats')
-                .select('member_id, goals, assists, difficult_saves');
+            // match_player_stats pode não existir — ignorar silenciosamente
+            let champScouts: any[] = [];
+            try {
+                const { data: champData, error: champError } = await supabase
+                    .from('match_player_stats')
+                    .select('member_id, goals, assists, difficult_saves');
+                if (!champError) champScouts = champData || [];
+            } catch (_) { /* tabela não existe, ignorar */ }
 
-            const { data: attendance } = await supabase
-                .from('racha_attendance')
-                .select('member_id, racha_id')
-                .eq('status', 'in')
-                .in('racha_id', closedRachaIds);
+            const { data: attendance, error: attendanceError } = closedRachaIds.length > 0
+                ? await supabase.from('racha_attendance').select('member_id, racha_id').eq('status', 'in').in('racha_id', closedRachaIds)
+                : { data: [], error: null };
+            if (attendanceError) console.error('Erro attendance:', attendanceError);
 
             // 4. Consolidar
             const consolidated = membersData?.map(m => {
@@ -132,8 +138,9 @@ export default function EdicaoScoutsPage() {
             }) || [];
 
             setMembers(consolidated);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao carregar dados:', error);
+            alert('Erro ao carregar planilha: ' + (error?.message || JSON.stringify(error)));
         } finally {
             setLoading(false);
         }
