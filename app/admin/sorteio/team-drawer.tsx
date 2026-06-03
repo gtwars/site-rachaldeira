@@ -50,131 +50,66 @@ export function TeamDrawer({ confirmedMembers, rachaLocation, rachaDate }: TeamD
 
     const handleDrawTeams = () => {
         const selectedMembers = confirmedMembers.filter(m => selectedMemberIds.has(m.id));
-
         if (selectedMembers.length === 0) return;
 
         setIsShuffling(true);
         setTimeout(() => {
-            // Function to normalize position
-            const normalizePosition = (pos: string | null): 'DEF' | 'MID' | 'ATT' | 'GK' | 'OTHER' => {
-                if (!pos) return 'OTHER';
+            // Sort by level desc with random tiebreaker (so equal-level players are shuffled)
+            const sortByLevel = (arr: Member[]): Member[] =>
+                [...arr].sort((a, b) => {
+                    const diff = (b.level || 1) - (a.level || 1);
+                    return diff !== 0 ? diff : Math.random() - 0.5;
+                });
+
+            // Snake draft: teams 0,1,2,2,1,0,0,1,2... balances level sums naturally
+            const snakeDraft = (players: Member[]) => {
+                const sorted = sortByLevel(players);
+                sorted.forEach((player, i) => {
+                    const round = Math.floor(i / numTeams);
+                    const pos = i % numTeams;
+                    const teamIdx = round % 2 === 0 ? pos : numTeams - 1 - pos;
+                    newTeams[teamIdx].push(player);
+                    teamSums[teamIdx] += (player.level || 1);
+                });
+            };
+
+            const isGK = (pos: string | null) => {
+                if (!pos) return false;
                 const p = pos.toLowerCase();
-                if (p.includes('gol') || p.includes('gk')) return 'GK';
-                if (p.includes('zag') || p.includes('def') || p.includes('lat') || p.includes('bec')) return 'DEF';
-                if (p.includes('mei') || p.includes('vol') || p.includes('arm')) return 'MID';
-                if (p.includes('ata') || p.includes('pon') || p.includes('cen')) return 'ATT';
-                return 'OTHER';
+                return p.includes('gol') || p.includes('gk');
             };
 
-            // Group members by position
-            const positionGroups: Record<string, Member[]> = {
-                GK: [],
-                DEF: [],
-                MID: [],
-                ATT: [],
-                OTHER: []
+            const isDEF = (pos: string | null) => {
+                if (!pos) return false;
+                const p = pos.toLowerCase();
+                return p.includes('zag') || p.includes('bec');
             };
 
-            selectedMembers.forEach(m => {
-                const role = normalizePosition(m.position);
-                positionGroups[role].push(m);
-            });
-
-            // Sort each group by level (descending)
-            Object.values(positionGroups).forEach(group => {
-                group.sort((a, b) => (b.level || 1) - (a.level || 1));
-            });
-
-            // Determine number of teams
             const totalPlayers = selectedMembers.length;
-            const targetTeamSize = 5; // Preference: 5 per team
-
-            // CHANGED: Use Math.ceil to ensure strict limit of 5 per team (creating overflow team if needed)
+            const targetTeamSize = 5;
             let numTeams = Math.ceil(totalPlayers / targetTeamSize);
-
-            if (numTeams < 2 && totalPlayers >= 4) {
-                numTeams = 2; // Min 2 teams for a match
-            } else if (numTeams === 0) {
-                numTeams = 1; // Fallback
-            }
+            if (numTeams < 2 && totalPlayers >= 4) numTeams = 2;
+            if (numTeams === 0) numTeams = 1;
 
             const newTeams: Member[][] = Array.from({ length: numTeams }, () => []);
-            const teamLevelSums = new Array(numTeams).fill(0);
+            const teamSums = new Array(numTeams).fill(0);
 
-            // Helper to add player to a specific team
-            const addPlayerToTeam = (teamIndex: number, player: Member) => {
-                newTeams[teamIndex].push(player);
-                teamLevelSums[teamIndex] += (player.level || 1);
-            };
+            const gks = selectedMembers.filter(m => isGK(m.position));
+            const defs = selectedMembers.filter(m => !isGK(m.position) && isDEF(m.position));
+            const others = selectedMembers.filter(m => !isGK(m.position) && !isDEF(m.position));
 
-            // Helper to find the best team for a player (balancing levels)
-            const distributePlayers = (players: Member[]) => {
-                // Use "Fill Logic" if we have enough players for at least 2 full teams (10+)
-                // This creates 5, 5, 3 structure instead of 5, 4, 4.
-                const useFillLogic = totalPlayers >= 10;
-                const fullTeamCount = Math.floor(totalPlayers / targetTeamSize);
+            // 1. GKs: 1 per team — extras go to general pool
+            const priorityGKs = gks.slice(0, numTeams);
+            const extraGKs = gks.slice(numTeams);
+            snakeDraft(priorityGKs);
 
-                for (const player of players) {
-                    let candidates: { idx: number, len: number, sum: number }[] = [];
+            // 2. DEFs: up to 2 per team — extras go to general pool
+            const priorityDEFs = defs.slice(0, numTeams * 2);
+            const extraDEFs = defs.slice(numTeams * 2);
+            snakeDraft(priorityDEFs);
 
-                    if (useFillLogic) {
-                        // Prioritize creating Full Teams (size 5) before overflow
-                        const mainTeamsNotFull: { idx: number, len: number, sum: number }[] = [];
-                        const reserveTeams: { idx: number, len: number, sum: number }[] = [];
-
-                        for (let i = 0; i < numTeams; i++) {
-                            const team = newTeams[i];
-                            const sum = teamLevelSums[i];
-                            const stats = { idx: i, len: team.length, sum };
-
-                            // Teams 0 to fullTeamCount-1 are "Main"
-                            if (i < fullTeamCount) {
-                                if (team.length < targetTeamSize) {
-                                    mainTeamsNotFull.push(stats);
-                                }
-                            } else {
-                                reserveTeams.push(stats);
-                            }
-                        }
-
-                        if (mainTeamsNotFull.length > 0) {
-                            candidates = mainTeamsNotFull;
-                        } else {
-                            candidates = reserveTeams;
-                        }
-                    } else {
-                        // Balanced logic for small numbers (< 10)
-                        candidates = newTeams.map((t, idx) => ({ idx, len: t.length, sum: teamLevelSums[idx] }));
-                    }
-
-                    // Sort: Fill empty slots first (within candidates), then balance level
-                    candidates.sort((a, b) => {
-                        if (a.len !== b.len) return a.len - b.len;
-                        return a.sum - b.sum;
-                    });
-
-                    if (candidates.length > 0) {
-                        const chosenIndex = candidates[0].idx;
-                        addPlayerToTeam(chosenIndex, player);
-                    }
-                }
-            };
-
-            // Order of injection strictly matters to satisfy "Core Requirement first".
-            // 1. Determine GKs first
-            distributePlayers(positionGroups.GK);
-
-            // 2. Defenders (Foundation)
-            distributePlayers(positionGroups.DEF);
-
-            // 3. Midfielders (Link)
-            distributePlayers(positionGroups.MID);
-
-            // 4. Attackers (Finishers)
-            distributePlayers(positionGroups.ATT);
-
-            // 5. Others/Wildcards
-            distributePlayers(positionGroups.OTHER);
+            // 3. Everything else (others + leftover GKs/DEFs) balanced by level
+            snakeDraft([...extraGKs, ...extraDEFs, ...others]);
 
             setTeams(newTeams);
             setIsShuffling(false);
@@ -196,7 +131,7 @@ export function TeamDrawer({ confirmedMembers, rachaLocation, rachaDate }: TeamD
                     </span>
                     <Button onClick={handleDrawTeams} disabled={isShuffling || selectedMemberIds.size === 0}>
                         <Shuffle className={`mr-2 h-4 w-4 ${isShuffling ? 'animate-spin' : ''}`} />
-                        {isShuffling ? 'Sorteando...' : 'Sortear Times'}
+                        {isShuffling ? 'Sorteando...' : teams.length > 0 ? 'Sortear Novamente' : 'Sortear Times'}
                     </Button>
                 </div>
             </div>
