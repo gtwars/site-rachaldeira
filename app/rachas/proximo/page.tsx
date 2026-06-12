@@ -18,6 +18,17 @@ export default async function ProximoRachaPage() {
 
     const isAdmin = profile?.role === 'admin' || profile?.role === 'director';
 
+    // Resolve member_id: from profile link or fallback by email
+    let resolvedMemberId: string | null = profile?.member_id ?? null;
+    if (!resolvedMemberId && user.email) {
+        const { data: memberByEmail } = await supabase
+            .from('members')
+            .select('id')
+            .eq('email', user.email)
+            .maybeSingle();
+        resolvedMemberId = memberByEmail?.id ?? null;
+    }
+
     // Get next racha
     const { data: racha } = await supabase
         .from('rachas')
@@ -68,7 +79,7 @@ export default async function ProximoRachaPage() {
             racha={racha}
             initialAttendance={attendance || []}
             initialScouts={scouts || []}
-            userMemberId={profile?.member_id}
+            userMemberId={resolvedMemberId}
             isAdmin={isAdmin}
         />
     );
