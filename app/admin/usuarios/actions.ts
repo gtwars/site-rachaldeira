@@ -8,8 +8,7 @@ export async function linkUserToMember(userId: string, memberId: string | null) 
 
     const { error } = await supabase
         .from('profiles')
-        .update({ member_id: memberId })
-        .eq('id', userId);
+        .upsert({ id: userId, member_id: memberId }, { onConflict: 'id' });
 
     if (error) {
         console.error('Error linking user to member:', error);
