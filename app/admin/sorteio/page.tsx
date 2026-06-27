@@ -55,7 +55,7 @@ export default async function SorteioPage() {
     const { data: allMembersData } = await supabase
         .from('members')
         .select('id, name, photo_url, position, level')
-        .eq('active', true)
+        .eq('is_active', true)
         .order('name', { ascending: true });
 
     const allMembers = (allMembersData || []).filter((m: any) => !confirmedIds.has(m.id));
