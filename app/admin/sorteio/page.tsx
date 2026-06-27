@@ -33,7 +33,6 @@ export default async function SorteioPage() {
     }
 
     // 2. Fetch Confirmed Members for this Racha
-    // We get the attendance records linked to members
     const { data: attendance } = await supabase
         .from('racha_attendance')
         .select(`
@@ -49,13 +48,23 @@ export default async function SorteioPage() {
         .eq('racha_id', nextRacha.id)
         .eq('status', 'in');
 
-    // Extract the member objects from the join structure
     const confirmedMembers = attendance?.map((record: any) => record.member) || [];
+    const confirmedIds = new Set(confirmedMembers.map((m: any) => m.id));
+
+    // 3. Fetch all active members so admin can add who forgot to confirm
+    const { data: allMembersData } = await supabase
+        .from('members')
+        .select('id, name, photo_url, position, level')
+        .eq('active', true)
+        .order('name', { ascending: true });
+
+    const allMembers = (allMembersData || []).filter((m: any) => !confirmedIds.has(m.id));
 
     return (
         <div className="p-8">
             <TeamDrawer
                 confirmedMembers={confirmedMembers}
+                nonConfirmedMembers={allMembers}
                 rachaLocation={nextRacha.location}
                 rachaDate={new Date(nextRacha.date_time).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' })}
             />
