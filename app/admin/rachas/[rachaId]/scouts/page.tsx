@@ -182,6 +182,21 @@ export default function ScoutsPage({ params }: { params: Promise<{ rachaId: stri
         loadData();
     };
 
+    const handleRemovePlayer = async (memberId: string) => {
+        if (!confirm('Remover este jogador da lista de presentes?')) return;
+        const supabase = createClient();
+        const { error } = await supabase
+            .from('racha_attendance')
+            .update({ status: 'out' })
+            .eq('racha_id', rachaId)
+            .eq('member_id', memberId);
+        if (error) {
+            alert('Erro ao remover jogador: ' + error.message);
+            return;
+        }
+        loadData();
+    };
+
     const filteredScouts = scouts.filter(s => {
         const member = members.find(m => m.id === s.member_id);
         return member?.name?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -444,6 +459,7 @@ export default function ScoutsPage({ params }: { params: Promise<{ rachaId: stri
                                         <TableHead className="text-center">🎯 Assistências</TableHead>
                                         <TableHead className="text-center">🧱 Defesas</TableHead>
                                         <TableHead className="text-center">⚠️ Advertências</TableHead>
+                                        <TableHead className="w-10"></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -562,6 +578,17 @@ export default function ScoutsPage({ params }: { params: Promise<{ rachaId: stri
                                                             <Plus size={16} />
                                                         </Button>
                                                     </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => handleRemovePlayer(scout.member_id)}
+                                                        className="text-red-400 hover:text-red-600 hover:bg-red-50"
+                                                        title="Remover jogador da lista"
+                                                    >
+                                                        <X size={16} />
+                                                    </Button>
                                                 </TableCell>
                                             </TableRow>
                                         );
