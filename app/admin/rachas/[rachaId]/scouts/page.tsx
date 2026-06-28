@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Minus, Play, X, Trophy, Shield, Medal, RotateCcw, Check, AlertCircle } from 'lucide-react';
+import { Plus, Minus, Play, X, Trophy, Shield, Medal, RotateCcw, Check, AlertCircle, Camera, Upload, Loader2 } from 'lucide-react';
 
 export default function ScoutsPage({ params }: { params: Promise<{ rachaId: string }> }) {
     const { rachaId } = use(params);
@@ -22,6 +22,11 @@ export default function ScoutsPage({ params }: { params: Promise<{ rachaId: stri
     const [isAdmin, setIsAdmin] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [addMemberId, setAddMemberId] = useState('');
+    const [photoModalOpen, setPhotoModalOpen] = useState(false);
+    const [parsedPlayers, setParsedPlayers] = useState<any[]>([]);
+    const [parsingPhoto, setParsingPhoto] = useState(false);
+    const [parseError, setParseError] = useState('');
+
     const [highlights, setHighlights] = useState({
         top1_id: '',
         top1_extra_id: '',
@@ -307,6 +312,81 @@ export default function ScoutsPage({ params }: { params: Promise<{ rachaId: stri
         }
     };
 
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setParsingPhoto(true);
+        setParseError('');
+        setParsedPlayers([]);
+
+        try {
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                const dataUrl = ev.target?.result as string;
+                const base64 = dataUrl.split(',')[1];
+                const mediaType = file.type || 'image/jpeg';
+
+                const res = await fetch('/api/admin/parse-scouts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageBase64: base64, mediaType }),
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    setParseError(data.error || 'Erro ao processar imagem');
+                    setParsingPhoto(false);
+                    return;
+                }
+
+                const players = (data.players || []).map((p: any) => {
+                    const matched = members.find(m =>
+                        m.name.toLowerCase().trim() === p.name.toLowerCase().trim()
+                    );
+                    return {
+                        ...p,
+                        member_id: matched?.id || null,
+                        matched_name: matched?.name || null,
+                        status: matched ? 'matched' : 'unmatched',
+                    };
+                });
+
+                setParsedPlayers(players);
+                setParsingPhoto(false);
+                setPhotoModalOpen(true);
+            };
+            reader.readAsDataURL(file);
+        } catch (err: any) {
+            setParseError(err.message);
+            setParsingPhoto(false);
+        }
+
+        e.target.value = '';
+    };
+
+    const handleApplyParsed = () => {
+        const matched = parsedPlayers.filter(p => p.status === 'matched');
+        setScouts(prev => {
+            const updated = [...prev];
+            for (const p of matched) {
+                const idx = updated.findIndex(s => s.member_id === p.member_id);
+                if (idx >= 0) {
+                    updated[idx] = {
+                        ...updated[idx],
+                        goals: p.goals,
+                        assists: p.assists,
+                        difficult_saves: p.difficult_saves,
+                        warnings: p.warnings,
+                    };
+                }
+            }
+            return updated;
+        });
+        setPhotoModalOpen(false);
+        setParsedPlayers([]);
+    };
+
     const handleReopenRacha = async () => {
         if (!confirm('Deseja reabrir este racha? Isso permitirá editar os scouts numéricos novamente.')) return;
 
@@ -394,7 +474,7 @@ export default function ScoutsPage({ params }: { params: Promise<{ rachaId: stri
 
 
                 {/* Aviso desativado conforme pedido para focar no botão Salvar manual */}
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 flex items-center justify-between">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 flex items-center justify-between flex-wrap gap-3">
                     <div className="flex items-center gap-3">
                         <Trophy className="text-yellow-600" size={24} />
                         <div>
@@ -402,11 +482,110 @@ export default function ScoutsPage({ params }: { params: Promise<{ rachaId: stri
                             <p className="text-yellow-700 text-sm italic">O seu ranking geral será atualizado ao clicar em Salvar.</p>
                         </div>
                     </div>
-                    <Button onClick={handleSaveManual} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 px-8 shadow-md">
-                        <Check size={20} className="mr-2" />
-                        {saving ? 'Salvando...' : 'SALVAR SCOUTS DE HOJE'}
-                    </Button>
+                    <div className="flex gap-2 flex-wrap">
+                        <label className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-md font-bold text-sm h-12 ${parsingPhoto ? 'bg-purple-300 text-white cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 text-white'}`}>
+                            {parsingPhoto ? (
+                                <>
+                                    <Loader2 size={18} className="animate-spin" />
+                                    Lendo foto...
+                                </>
+                            ) : (
+                                <>
+                                    <Camera size={18} />
+                                    Importar Foto do Scout
+                                </>
+                            )}
+                            <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                className="hidden"
+                                onChange={handlePhotoUpload}
+                                disabled={parsingPhoto}
+                            />
+                        </label>
+                        <Button onClick={handleSaveManual} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 px-8 shadow-md">
+                            <Check size={20} className="mr-2" />
+                            {saving ? 'Salvando...' : 'SALVAR SCOUTS DE HOJE'}
+                        </Button>
+                    </div>
                 </div>
+
+                {/* Modal de revisão dos scouts da foto */}
+                {photoModalOpen && (
+                    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                            <div className="p-5 border-b flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-xl font-bold">Revisão dos Scouts da Foto</h2>
+                                    <p className="text-sm text-gray-500 mt-1">Confira os valores lidos. Apenas jogadores reconhecidos serão aplicados.</p>
+                                </div>
+                                <button onClick={() => setPhotoModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            <div className="overflow-y-auto flex-1 p-4">
+                                {parseError && (
+                                    <div className="bg-red-50 border border-red-200 text-red-700 rounded p-3 mb-4 flex items-center gap-2">
+                                        <AlertCircle size={16} />
+                                        {parseError}
+                                    </div>
+                                )}
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="text-left text-gray-500 border-b">
+                                            <th className="pb-2 font-medium">Nome (foto)</th>
+                                            <th className="pb-2 font-medium text-center">⚽</th>
+                                            <th className="pb-2 font-medium text-center">🎯</th>
+                                            <th className="pb-2 font-medium text-center">🧱</th>
+                                            <th className="pb-2 font-medium text-center">⚠️</th>
+                                            <th className="pb-2 font-medium">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {parsedPlayers.map((p, i) => (
+                                            <tr key={i} className={`border-b ${p.status === 'unmatched' ? 'bg-red-50' : 'bg-green-50'}`}>
+                                                <td className="py-2 pr-2">
+                                                    <div className="font-medium">{p.name}</div>
+                                                    {p.matched_name && p.matched_name !== p.name && (
+                                                        <div className="text-xs text-gray-400">→ {p.matched_name}</div>
+                                                    )}
+                                                </td>
+                                                <td className="py-2 text-center font-bold">{p.goals}</td>
+                                                <td className="py-2 text-center font-bold">{p.assists}</td>
+                                                <td className="py-2 text-center font-bold">{p.difficult_saves}</td>
+                                                <td className="py-2 text-center font-bold">{p.warnings}</td>
+                                                <td className="py-2">
+                                                    {p.status === 'matched' ? (
+                                                        <span className="text-green-600 text-xs font-bold flex items-center gap-1"><Check size={12} />Reconhecido</span>
+                                                    ) : (
+                                                        <span className="text-red-500 text-xs font-bold flex items-center gap-1"><AlertCircle size={12} />Não encontrado</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                {parsedPlayers.filter(p => p.status === 'unmatched').length > 0 && (
+                                    <p className="text-xs text-red-500 mt-3">
+                                        * Jogadores não encontrados serão ignorados. Adicione-os manualmente se necessário.
+                                    </p>
+                                )}
+                            </div>
+                            <div className="p-4 border-t flex justify-end gap-3">
+                                <Button variant="outline" onClick={() => setPhotoModalOpen(false)}>Cancelar</Button>
+                                <Button
+                                    onClick={handleApplyParsed}
+                                    disabled={parsedPlayers.filter(p => p.status === 'matched').length === 0}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                                >
+                                    <Check size={16} className="mr-2" />
+                                    Aplicar {parsedPlayers.filter(p => p.status === 'matched').length} jogadores
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <Card>
                     <CardHeader className="flex flex-col md:flex-row justify-between items-center gap-4">
