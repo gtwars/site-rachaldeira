@@ -83,49 +83,29 @@ function drawTeams(selectedMembers: Member[]): Member[][] {
 
     const newTeams: Member[][] = Array.from({ length: numTeams }, () => []);
 
-    // Snake slots only for the 2 main teams (T0 and T1), capped at 5 each
-    const numMainTeams = Math.min(2, numTeams);
-    const mainCapacity = numMainTeams * TEAM_SIZE;
-    const mainSlots = buildSnakeSlots(numMainTeams, new Array(numMainTeams).fill(TEAM_SIZE));
+    // Snake slots para todos os times, garantindo distribuição equilibrada por nível
+    const slots = buildSnakeSlots(numTeams, teamCapacities);
 
-    const gks = selectedMembers.filter(m => isGK(m.position));
-    const defs = selectedMembers.filter(m => !isGK(m.position) && isDEF(m.position));
-    const others = selectedMembers.filter(m => !isGK(m.position) && !isDEF(m.position));
+    const gks = sortByLevel(selectedMembers.filter(m => isGK(m.position)));
+    const defs = sortByLevel(selectedMembers.filter(m => !isGK(m.position) && isDEF(m.position)));
+    const others = sortByLevel(selectedMembers.filter(m => !isGK(m.position) && !isDEF(m.position)));
 
-    let mIdx = 0;
-    const assignMain = (players: Member[]) => {
-        for (const p of sortByLevel(players)) {
-            if (mIdx < mainSlots.length) {
-                newTeams[mainSlots[mIdx]].push(p);
-                mIdx++;
+    let idx = 0;
+    const assign = (players: Member[]) => {
+        for (const p of players) {
+            if (idx < slots.length) {
+                newTeams[slots[idx]].push(p);
+                idx++;
             }
         }
     };
 
-    // 1 GK per main team (up to numMainTeams GKs)
-    assignMain(gks.slice(0, numMainTeams));
-    // 2 DEFs per main team
-    assignMain(defs.slice(0, numMainTeams * 2));
-    // Fill remaining main team slots with leftover players sorted by level
-    const extraPool = sortByLevel([
-        ...gks.slice(numMainTeams),
-        ...defs.slice(numMainTeams * 2),
-        ...others,
-    ]);
-    const slotsLeftInMain = mainCapacity - mIdx;
-    assignMain(extraPool.slice(0, slotsLeftInMain));
-
-    // Overflow players → additional teams (T2, T3, ...)
-    if (numTeams > 2) {
-        const overflowPlayers = extraPool.slice(slotsLeftInMain);
-        const overflowCapacities = teamCapacities.slice(2);
-        const overflowSlots = buildSnakeSlots(numTeams - 2, overflowCapacities).map(t => t + 2);
-        overflowPlayers.forEach((p, i) => {
-            if (i < overflowSlots.length) {
-                newTeams[overflowSlots[i]].push(p);
-            }
-        });
-    }
+    // 1 goleiro por time (até numTeams goleiros), do maior nível para o menor
+    assign(gks.slice(0, numTeams));
+    // 2 zagueiros por time, do maior nível para o menor
+    assign(defs.slice(0, numTeams * 2));
+    // Preenche o restante (goleiros/zagueiros excedentes + meias/atacantes) equilibrado por nível
+    assign(sortByLevel([...gks.slice(numTeams), ...defs.slice(numTeams * 2), ...others]));
 
     return newTeams;
 }

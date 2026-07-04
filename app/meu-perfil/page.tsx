@@ -17,15 +17,10 @@ const Label = ({ htmlFor, children }: { htmlFor: string; children: React.ReactNo
 );
 
 const POSITIONS = [
-    { value: 'GOL', label: 'Goleiro' },
-    { value: 'ZAG', label: 'Zagueiro' },
-    { value: 'LD',  label: 'Lateral Direito' },
-    { value: 'LE',  label: 'Lateral Esquerdo' },
-    { value: 'VOL', label: 'Volante' },
-    { value: 'MEI', label: 'Meia' },
-    { value: 'PD',  label: 'Ponta Direita' },
-    { value: 'PE',  label: 'Ponta Esquerda' },
-    { value: 'ATA', label: 'Atacante' },
+    { value: 'Goleiro',  label: 'Goleiro' },
+    { value: 'Zagueiro', label: 'Zagueiro' },
+    { value: 'Meia',     label: 'Meia' },
+    { value: 'Atacante', label: 'Atacante' },
 ];
 
 const LEVEL_LABEL  = ['Bronze', 'Prata', 'Ouro', 'Elite', 'Lenda'];

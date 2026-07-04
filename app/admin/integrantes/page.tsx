@@ -480,8 +480,6 @@ export default function AdminIntegrantesPage() {
                                 <SelectContent>
                                     <SelectItem value="Goleiro">Goleiro</SelectItem>
                                     <SelectItem value="Zagueiro">Zagueiro</SelectItem>
-                                    <SelectItem value="Lateral">Lateral</SelectItem>
-                                    <SelectItem value="Volante">Volante</SelectItem>
                                     <SelectItem value="Meia">Meia</SelectItem>
                                     <SelectItem value="Atacante">Atacante</SelectItem>
                                 </SelectContent>

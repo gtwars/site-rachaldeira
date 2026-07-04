@@ -198,7 +198,7 @@ export default function CompletarCadastroPage() {
                                             disabled={loading}
                                         >
                                             <option value="" disabled className="bg-gray-800">Selecione</option>
-                                            {['Goleiro', 'Zagueiro', 'Lateral', 'Meia', 'Atacante'].map(p => (
+                                            {['Goleiro', 'Zagueiro', 'Meia', 'Atacante'].map(p => (
                                                 <option key={p} value={p} className="bg-gray-800">{p}</option>
                                             ))}
                                         </select>
