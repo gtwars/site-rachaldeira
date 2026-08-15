@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { sendAttendanceNotifications } from '@/lib/send-attendance-notifications';
 
-export async function triggerAttendanceNotifications() {
+export async function triggerAttendanceNotifications(rachaId: string) {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -20,7 +20,7 @@ export async function triggerAttendanceNotifications() {
     }
 
     try {
-        return await sendAttendanceNotifications();
+        return await sendAttendanceNotifications(rachaId);
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Erro desconhecido';
         return { error: message, total_members: 0, already_confirmed: 0, emails_sent: 0, emails_failed: 0 };

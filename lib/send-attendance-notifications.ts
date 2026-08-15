@@ -12,7 +12,7 @@ export type NotificationResult = {
     emails_failed: number;
 };
 
-export async function sendAttendanceNotifications(): Promise<NotificationResult> {
+export async function sendAttendanceNotifications(rachaId?: string): Promise<NotificationResult> {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -23,12 +23,18 @@ export async function sendAttendanceNotifications(): Promise<NotificationResult>
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://site-rachaldeira.vercel.app';
     const fromEmail = process.env.NOTIFICATION_FROM_EMAIL || 'noreply@rachaldeira.com.br';
 
-    const { data: racha } = await supabase
+    let rachaQuery = supabase
         .from('rachas')
         .select('id, date, location')
-        .eq('is_next', true)
-        .eq('status', 'open')
-        .single();
+        .eq('status', 'open');
+
+    if (rachaId) {
+        rachaQuery = rachaQuery.eq('id', rachaId);
+    } else {
+        rachaQuery = rachaQuery.eq('is_next', true);
+    }
+
+    const { data: racha } = await rachaQuery.single();
 
     if (!racha) {
         return {
