@@ -69,7 +69,8 @@ function isDEF(pos: string | null) {
     return p.includes('zag') || p.includes('bec');
 }
 
-function drawTeams(selectedMembers: Member[]): Member[][] {
+function drawTeams(members: Member[]): Member[][] {
+    const selectedMembers = members.filter(m => !isGK(m.position));
     const totalPlayers = selectedMembers.length;
     if (totalPlayers === 0) return [];
 
@@ -86,7 +87,6 @@ function drawTeams(selectedMembers: Member[]): Member[][] {
     // Snake slots para todos os times, garantindo distribuição equilibrada por nível
     const slots = buildSnakeSlots(numTeams, teamCapacities);
 
-    const gks = sortByLevel(selectedMembers.filter(m => isGK(m.position)));
     const defs = sortByLevel(selectedMembers.filter(m => !isGK(m.position) && isDEF(m.position)));
     const others = sortByLevel(selectedMembers.filter(m => !isGK(m.position) && !isDEF(m.position)));
 
@@ -100,12 +100,10 @@ function drawTeams(selectedMembers: Member[]): Member[][] {
         }
     };
 
-    // 1 goleiro por time (até numTeams goleiros), do maior nível para o menor
-    assign(gks.slice(0, numTeams));
     // 2 zagueiros por time, do maior nível para o menor
     assign(defs.slice(0, numTeams * 2));
-    // Preenche o restante (goleiros/zagueiros excedentes + meias/atacantes) equilibrado por nível
-    assign(sortByLevel([...gks.slice(numTeams), ...defs.slice(numTeams * 2), ...others]));
+    // Preenche o restante (zagueiros excedentes + meias/atacantes) equilibrado por nível
+    assign(sortByLevel([...defs.slice(numTeams * 2), ...others]));
 
     return newTeams;
 }

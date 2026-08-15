@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, CalendarDays, Trophy, PiggyBank, Home, LayoutDashboard, Shuffle, Image as ImageIcon, Menu, X, ChevronRight, Target } from 'lucide-react';
+import { Users, CalendarDays, Trophy, Home, LayoutDashboard, Shuffle, Image as ImageIcon, Menu, X, ChevronRight, Target, Bell } from 'lucide-react';
 
 interface AdminClientLayoutProps {
     children: React.ReactNode;
@@ -25,16 +25,11 @@ export default function AdminClientLayout({
         { href: '/admin/rachas', label: 'Rachas', icon: CalendarDays },
         { href: '/admin/campeonatos', label: 'Campeonatos', icon: Trophy },
         { href: '/admin/galeria', label: 'Galeria', icon: ImageIcon },
-        { href: '/admin/financeiro', label: 'Financeiro', icon: PiggyBank },
         { href: '/admin/sorteio', label: 'Sorteio', icon: Shuffle },
+        { href: '/admin/notificacoes', label: 'Notificações', icon: Bell },
     ];
 
-    const navItems = allNavItems.filter(item => {
-        if (role === 'director' && item.href === '/admin/financeiro') {
-            return false;
-        }
-        return true;
-    });
+    const navItems = allNavItems;
 
     // Close sidebar on navigation (mobile)
     useEffect(() => {
