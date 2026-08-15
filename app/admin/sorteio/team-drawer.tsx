@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Shuffle, AlertCircle, UserPlus, X } from 'lucide-react';
+import { Users, Shuffle, AlertCircle, UserPlus, X, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
     Dialog,
@@ -123,6 +124,8 @@ export function TeamDrawer({ confirmedMembers, nonConfirmedMembers, rachaLocatio
     const [teams, setTeams] = useState<Member[][]>([]);
     const [isShuffling, setIsShuffling] = useState(false);
     const [addDialogOpen, setAddDialogOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchDialogQuery, setSearchDialogQuery] = useState('');
 
     const allMembers = [...confirmedMembers, ...extraMembers];
 
@@ -156,6 +159,18 @@ export function TeamDrawer({ confirmedMembers, nonConfirmedMembers, rachaLocatio
     const availableToAdd = nonConfirmedMembers.filter(
         m => !extraMembers.some(e => e.id === m.id)
     );
+
+    const sortedMembers = [...allMembers].sort((a, b) =>
+        a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' })
+    );
+
+    const filteredMembers = searchQuery.trim()
+        ? sortedMembers.filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        : sortedMembers;
+
+    const filteredAvailableToAdd = searchDialogQuery.trim()
+        ? availableToAdd.filter(m => m.name.toLowerCase().includes(searchDialogQuery.toLowerCase()))
+        : availableToAdd;
 
     const handleDrawTeams = () => {
         const selected = allMembers.filter(m => selectedMemberIds.has(m.id));
@@ -225,7 +240,7 @@ export function TeamDrawer({ confirmedMembers, nonConfirmedMembers, rachaLocatio
                                 >
                                     Nenhum
                                 </Button>
-                                <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+                                <Dialog open={addDialogOpen} onOpenChange={v => { setAddDialogOpen(v); if (!v) setSearchDialogQuery(''); }}>
                                     <DialogTrigger asChild>
                                         <Button
                                             variant="outline"
@@ -241,16 +256,24 @@ export function TeamDrawer({ confirmedMembers, nonConfirmedMembers, rachaLocatio
                                         <DialogHeader>
                                             <DialogTitle>Adicionar Jogador</DialogTitle>
                                         </DialogHeader>
-                                        <p className="text-sm text-gray-500 mb-3">
-                                            Jogadores ativos que não confirmaram presença:
-                                        </p>
+                                        <div className="relative mb-3">
+                                            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
+                                            <Input
+                                                placeholder="Pesquisar..."
+                                                value={searchDialogQuery}
+                                                onChange={e => setSearchDialogQuery(e.target.value)}
+                                                className="pl-8 h-8 text-sm"
+                                            />
+                                        </div>
                                         <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
                                             {availableToAdd.length === 0 ? (
                                                 <p className="text-sm text-gray-400 text-center py-4">
                                                     Todos os membros ativos já estão na lista.
                                                 </p>
+                                            ) : filteredAvailableToAdd.length === 0 ? (
+                                                <p className="text-sm text-gray-400 text-center py-4">Nenhum jogador encontrado.</p>
                                             ) : (
-                                                availableToAdd.map(member => (
+                                                filteredAvailableToAdd.map(member => (
                                                     <div
                                                         key={member.id}
                                                         className="flex items-center gap-3 p-2 rounded-lg border bg-gray-50 hover:bg-gray-100 cursor-pointer"
@@ -277,9 +300,22 @@ export function TeamDrawer({ confirmedMembers, nonConfirmedMembers, rachaLocatio
                             </div>
                         </CardHeader>
                         <CardContent>
+                            <div className="relative mb-3">
+                                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
+                                <Input
+                                    placeholder="Pesquisar jogador..."
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    className="pl-8 h-8 text-sm"
+                                />
+                            </div>
                             <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
-                                {allMembers.map((member) => {
+                                {filteredMembers.length === 0 && searchQuery && (
+                                    <p className="text-sm text-gray-400 text-center py-4">Nenhum jogador encontrado.</p>
+                                )}
+                                {filteredMembers.map((member) => {
                                     const isExtra = extraMembers.some(e => e.id === member.id);
+
                                     return (
                                         <div
                                             key={member.id}
