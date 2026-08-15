@@ -25,7 +25,7 @@ export async function sendAttendanceNotifications(rachaId?: string): Promise<Not
 
     let rachaQuery = supabase
         .from('rachas')
-        .select('id, date, location')
+        .select('id, date_time, location')
         .eq('status', 'open');
 
     if (rachaId) {
@@ -76,7 +76,7 @@ export async function sendAttendanceNotifications(rachaId?: string): Promise<Not
         };
     }
 
-    const rachaDate = new Date(racha.date);
+    const rachaDate = new Date(racha.date_time);
     const subject = `⚽ Confirme sua presença – Racha ${rachaDate.toLocaleDateString('pt-BR', {
         weekday: 'long',
         day: 'numeric',
@@ -90,7 +90,7 @@ export async function sendAttendanceNotifications(rachaId?: string): Promise<Not
                 from: `Rachaldeira <${fromEmail}>`,
                 to: member.email!,
                 subject,
-                html: attendanceEmailTemplate(member.name, racha, siteUrl),
+                html: attendanceEmailTemplate(member.name, { date: racha.date_time, location: racha.location }, siteUrl),
             })
         )
     );

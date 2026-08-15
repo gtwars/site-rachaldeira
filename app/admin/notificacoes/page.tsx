@@ -6,9 +6,9 @@ export default async function NotificacoesPage() {
 
     const { data: rachas } = await supabase
         .from('rachas')
-        .select('id, date, location, status')
+        .select('id, date_time, location, status')
         .eq('status', 'open')
-        .order('date', { ascending: true });
+        .order('date_time', { ascending: true });
 
     const { data: members } = await supabase
         .from('members')

@@ -6,7 +6,7 @@ import { triggerAttendanceNotifications } from './actions';
 
 interface RachaWithStats {
     id: string;
-    date: string;
+    date_time: string;
     location: string;
     status: string;
     confirmedCount: number;
@@ -141,10 +141,10 @@ export default function NotificacoesClient({ rachas, totalMembers, membersWithEm
                                     <div className="flex items-start justify-between gap-4">
                                         <div>
                                             <p className="font-semibold text-gray-900 capitalize">
-                                                {formatDateBR(racha.date)}
+                                                {formatDateBR(racha.date_time)}
                                             </p>
                                             <p className="text-sm text-gray-500 mt-0.5">
-                                                🕐 {formatTimeBR(racha.date)} &nbsp;·&nbsp; 📍 {racha.location}
+                                                🕐 {formatTimeBR(racha.date_time)} &nbsp;·&nbsp; 📍 {racha.location}
                                             </p>
                                         </div>
                                         <div className="text-right flex-shrink-0">
