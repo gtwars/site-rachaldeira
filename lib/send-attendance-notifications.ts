@@ -22,7 +22,7 @@ export async function sendAttendanceNotifications(rachaId?: string): Promise<Not
 
     const resend = new Resend(process.env.RESEND_API_KEY);
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://site-rachaldeira.vercel.app';
-    const fromEmail = process.env.NOTIFICATION_FROM_EMAIL || 'onboarding@resend.dev';
+    const fromEmail = process.env.NOTIFICATION_FROM_EMAIL || 'noreply@rachaldeira.com';
 
     let rachaQuery = supabase
         .from('rachas')
