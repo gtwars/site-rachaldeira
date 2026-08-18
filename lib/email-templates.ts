@@ -19,13 +19,13 @@ function formatTimeBR(dateStr: string): string {
 
 export function attendanceEmailTemplate(
     memberName: string,
-    racha: { date: string; location: string },
+    racha: { id: string; date: string; location: string },
     siteUrl: string
 ): string {
     const firstName = memberName.split(' ')[0];
     const dateFormatted = formatDateBR(racha.date);
     const timeFormatted = formatTimeBR(racha.date);
-    const confirmUrl = `${siteUrl}/rachas/proximo`;
+    const confirmUrl = `${siteUrl}/rachas/${racha.id}`;
 
     return `<!DOCTYPE html>
 <html lang="pt-BR">

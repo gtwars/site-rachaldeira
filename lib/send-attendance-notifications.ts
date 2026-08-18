@@ -89,7 +89,7 @@ export async function sendAttendanceNotifications(rachaId?: string): Promise<Not
         from: `Rachaldeira <${fromEmail}>`,
         to: member.email!,
         subject,
-        html: attendanceEmailTemplate(member.name, { date: racha.date_time, location: racha.location }, siteUrl),
+        html: attendanceEmailTemplate(member.name, { id: racha.id, date: racha.date_time, location: racha.location }, siteUrl),
     }));
 
     const { data, error } = await resend.batch.send(batch);
