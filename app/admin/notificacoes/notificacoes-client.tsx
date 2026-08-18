@@ -26,6 +26,7 @@ type SendResult = {
     already_confirmed?: number;
     emails_sent?: number;
     emails_failed?: number;
+    first_error?: string;
 };
 
 function formatDateBR(dateStr: string) {
@@ -209,10 +210,16 @@ export default function NotificacoesClient({ rachas, totalMembers, membersWithEm
                             <p>ℹ️ {result.message}</p>
                         ) : (
                             <div className="space-y-1">
-                                <p className="font-semibold">✅ Emails enviados com sucesso!</p>
-                                <p>{result.emails_sent} {result.emails_sent === 1 ? 'email enviado' : 'emails enviados'}</p>
+                                {(result.emails_sent ?? 0) > 0 ? (
+                                    <p className="font-semibold">✅ {result.emails_sent} {result.emails_sent === 1 ? 'email enviado' : 'emails enviados'} com sucesso!</p>
+                                ) : (
+                                    <p className="font-semibold text-red-700">❌ Nenhum email foi entregue.</p>
+                                )}
                                 {(result.emails_failed ?? 0) > 0 && (
-                                    <p className="text-orange-600">⚠️ {result.emails_failed} falharam (email inválido ou bloqueado)</p>
+                                    <p className="text-red-700">⚠️ {result.emails_failed} falharam</p>
+                                )}
+                                {result.first_error && (
+                                    <p className="text-red-600 text-xs mt-1">Motivo: {result.first_error}</p>
                                 )}
                             </div>
                         )}

@@ -10,6 +10,7 @@ export type NotificationResult = {
     already_confirmed: number;
     emails_sent: number;
     emails_failed: number;
+    first_error?: string;
 };
 
 export async function sendAttendanceNotifications(rachaId?: string): Promise<NotificationResult> {
@@ -21,7 +22,7 @@ export async function sendAttendanceNotifications(rachaId?: string): Promise<Not
 
     const resend = new Resend(process.env.RESEND_API_KEY);
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://site-rachaldeira.vercel.app';
-    const fromEmail = process.env.NOTIFICATION_FROM_EMAIL || 'noreply@rachaldeira.com.br';
+    const fromEmail = process.env.NOTIFICATION_FROM_EMAIL || 'onboarding@resend.dev';
 
     let rachaQuery = supabase
         .from('rachas')
@@ -84,19 +85,25 @@ export async function sendAttendanceNotifications(rachaId?: string): Promise<Not
         timeZone: 'America/Sao_Paulo',
     })}`;
 
-    const results = await Promise.allSettled(
-        pending.map(member =>
-            resend.emails.send({
-                from: `Rachaldeira <${fromEmail}>`,
-                to: member.email!,
-                subject,
-                html: attendanceEmailTemplate(member.name, { date: racha.date_time, location: racha.location }, siteUrl),
-            })
-        )
-    );
+    let sent = 0;
+    let failed = 0;
+    let firstError: string | undefined;
 
-    const sent = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
+    for (const member of pending) {
+        const { data, error } = await resend.emails.send({
+            from: `Rachaldeira <${fromEmail}>`,
+            to: member.email!,
+            subject,
+            html: attendanceEmailTemplate(member.name, { date: racha.date_time, location: racha.location }, siteUrl),
+        });
+
+        if (error || !data) {
+            failed++;
+            if (!firstError) firstError = error?.message ?? 'Erro desconhecido';
+        } else {
+            sent++;
+        }
+    }
 
     return {
         success: true,
@@ -105,5 +112,6 @@ export async function sendAttendanceNotifications(rachaId?: string): Promise<Not
         already_confirmed: allMembers.length - pending.length,
         emails_sent: sent,
         emails_failed: failed,
+        first_error: firstError,
     };
 }
