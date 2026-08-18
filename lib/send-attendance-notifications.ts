@@ -85,28 +85,21 @@ export async function sendAttendanceNotifications(rachaId?: string): Promise<Not
         timeZone: 'America/Sao_Paulo',
     })}`;
 
-    let sent = 0;
-    let failed = 0;
-    let firstError: string | undefined;
+    const batch = pending.map(member => ({
+        from: `Rachaldeira <${fromEmail}>`,
+        to: member.email!,
+        subject,
+        html: attendanceEmailTemplate(member.name, { date: racha.date_time, location: racha.location }, siteUrl),
+    }));
 
-    for (const member of pending) {
-        const { data, error } = await resend.emails.send({
-            from: `Rachaldeira <${fromEmail}>`,
-            to: member.email!,
-            subject,
-            html: attendanceEmailTemplate(member.name, { date: racha.date_time, location: racha.location }, siteUrl),
-        });
+    const { data, error } = await resend.batch.send(batch);
 
-        if (error || !data) {
-            failed++;
-            if (!firstError) firstError = error?.message ?? 'Erro desconhecido';
-        } else {
-            sent++;
-        }
-    }
+    const sent = data?.data?.length ?? 0;
+    const failed = error ? pending.length : pending.length - sent;
+    const firstError = error?.message;
 
     return {
-        success: true,
+        success: !error,
         racha_id: racha.id,
         total_members: allMembers.length,
         already_confirmed: allMembers.length - pending.length,
