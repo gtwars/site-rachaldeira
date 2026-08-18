@@ -43,9 +43,8 @@ export function attendanceEmailTemplate(
           <!-- Header -->
           <tr>
             <td style="background-color:#0f172a;padding:28px 32px;text-align:center;border-bottom:1px solid #1e293b;">
-              <p style="margin:0;font-size:32px;line-height:1;">⚽</p>
-              <h1 style="color:#ffffff;margin:8px 0 0;font-size:22px;font-weight:bold;letter-spacing:0.5px;">Rachaldeira</h1>
-              <p style="color:#475569;font-size:12px;margin:4px 0 0;text-transform:uppercase;letter-spacing:1.5px;">Confirmação de Presença</p>
+              <img src="${siteUrl}/logo-new.png" alt="Rachaldeira" width="80" height="80" style="display:block;margin:0 auto;border-radius:12px;object-fit:contain;" />
+              <p style="color:#475569;font-size:12px;margin:12px 0 0;text-transform:uppercase;letter-spacing:1.5px;">Confirmação de Presença</p>
             </td>
           </tr>
 
