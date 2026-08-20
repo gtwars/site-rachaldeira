@@ -46,123 +46,128 @@ function MemberModal({ member, onClose }: { member: Member; onClose: () => void 
 
     return (
         <div
-            style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', animation: 'fadeIn 0.2s ease' }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', animation: 'fadeIn 0.2s ease' }}
             onClick={onClose}
         >
-            <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}} @keyframes slideUp{from{opacity:0;transform:translateY(28px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}`}</style>
+            <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}} @keyframes slideUp{from{opacity:0;transform:translateY(24px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}`}</style>
             <div
-                style={{ position: 'relative', width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', borderRadius: 20, background: '#0d0d1a', border: `2px solid ${border}`, boxShadow: `0 0 48px ${border}44, 0 24px 64px rgba(0,0,0,0.95)`, animation: 'slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}
+                className="relative w-full bg-white rounded-3xl shadow-2xl"
+                style={{ maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', animation: 'slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1)' }}
                 onClick={e => e.stopPropagation()}
             >
-                {/* Fechar */}
-                <button onClick={onClose} style={{ position: 'absolute', top: 14, right: 14, zIndex: 10, padding: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex' }}>
+                {/* Botão fechar */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                >
                     <Close size={18} />
                 </button>
 
-                {/* Header */}
-                <div style={{ background: `linear-gradient(135deg, ${border}28 0%, transparent 70%)`, padding: '28px 24px 20px', borderBottom: `1px solid ${border}22` }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                        <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', border: `3px solid ${border}`, flexShrink: 0 }}>
+                <div className="px-6 py-6">
+                    <div className="flex items-center gap-4">
+                        <div className="w-20 h-20 rounded-full overflow-hidden bg-white flex-shrink-0 shadow-lg" style={{ border: `3px solid ${border}` }}>
                             {member.photo_url
-                                ? <img src={member.photo_url} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }} />
-                                : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a2e' }}><User size={32} style={{ color: '#374151' }} /></div>
+                                ? <img src={member.photo_url} alt={member.name} className="w-full h-full object-cover object-center" />
+                                : <div className="w-full h-full flex items-center justify-center bg-gray-100"><User size={28} className="text-gray-400" /></div>
                             }
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <h2 style={{ fontSize: 24, fontWeight: 900, color: '#fff', lineHeight: 1.1, margin: 0 }}>{member.name}</h2>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-                                <span style={{ background: `${border}28`, color: border, fontWeight: 700, fontSize: 11, padding: '2px 10px', borderRadius: 20, border: `1px solid ${border}44` }}>{pos}</span>
-                                {member.age && <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{member.age} anos</span>}
-                                <span style={{ color: border, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
+                        <div className="flex-1 min-w-0">
+                            <h2 className="text-xl font-black text-gray-900 leading-tight truncate">{member.name}</h2>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-[#093a9f] border border-blue-100">{pos}</span>
+                                {member.age && <span className="text-xs text-gray-400">{member.age} anos</span>}
+                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold" style={{ background: `${border}1e`, color: border, border: `1px solid ${border}55` }}>{label}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* 4 stats em grid inline */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, marginTop: 18 }}>
+                    {/* 4 stats */}
+                    <div className="grid grid-cols-4 gap-2 mt-4">
                         {[
-                            { v: rachas, l: 'Jogos', color: '#fff' },
-                            { v: goals, l: 'Gols', color: '#4ade80' },
-                            { v: assists, l: 'Assist.', color: '#60a5fa' },
-                            { v: championships, l: '🏆 Títulos', color: '#ffd700' },
+                            { v: rachas,        l: 'Jogos',   cls: 'text-gray-900' },
+                            { v: goals,         l: 'Gols',    cls: 'text-emerald-600' },
+                            { v: assists,       l: 'Assist.', cls: 'text-[#093a9f]' },
+                            { v: championships, l: 'Títulos', cls: 'text-yellow-600' },
                         ].map((s, i) => (
-                            <div key={i} style={{ textAlign: 'center', padding: '10px 4px', borderRadius: 10, background: 'rgba(255,255,255,0.05)' }}>
-                                <div style={{ fontSize: 22, fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.v}</div>
-                                <div style={{ fontSize: 10, color: '#6b7280', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.l}</div>
+                            <div key={i} className="text-center p-2.5 rounded-xl bg-gray-50 border border-gray-100">
+                                <div className={`text-xl font-black leading-none ${s.cls}`}>{s.v}</div>
+                                <div className="text-[10px] text-gray-400 mt-1 uppercase tracking-wide font-semibold">{s.l}</div>
                             </div>
                         ))}
                     </div>
                 </div>
 
                 {/* Corpo */}
-                <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-
+                <div className="px-6 pb-6 flex flex-col gap-4 border-t border-gray-100">
                     {/* Produção Ofensiva */}
-                    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 16, border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <p style={{ fontSize: 11, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10, margin: '0 0 10px 0' }}>⚡ Produção Ofensiva</p>
+                    <div className="rounded-2xl border border-gray-100 p-4 mt-4">
+                        <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest mb-3">⚡ Produção Ofensiva</p>
                         {[
-                            { l: 'Gols Marcados', v: goals, color: '#4ade80' },
-                            { l: 'Assistências', v: assists, color: '#60a5fa' },
-                            { l: 'Média de Gols/Jogo', v: goalsPerGame, color: '#fff', bold: true },
+                            { l: 'Gols Marcados',      v: goals,       cls: 'text-emerald-600' },
+                            { l: 'Assistências',        v: assists,     cls: 'text-[#093a9f]' },
+                            { l: 'Média de Gols/Jogo', v: goalsPerGame, cls: 'text-gray-900', bold: true },
                         ].map((row, i, arr) => (
-                            <div key={row.l} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                                <span style={{ fontSize: 13, color: '#9ca3af', fontWeight: row.bold ? 700 : 400 }}>{row.l}</span>
-                                <span style={{ fontSize: 20, fontWeight: 900, color: row.color }}>{row.v}</span>
+                            <div key={row.l} className={`flex justify-between items-center py-2.5 ${i < arr.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                <span className={`text-sm ${row.bold ? 'text-gray-900 font-bold' : 'text-gray-500'}`}>{row.l}</span>
+                                <span className={`text-lg font-black ${row.cls}`}>{row.v}</span>
                             </div>
                         ))}
                     </div>
 
                     {/* Defesa e Disciplina */}
-                    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 16, border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <p style={{ fontSize: 11, fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 10px 0' }}>🛡️ Defesa e Disciplina</p>
+                    <div className="rounded-2xl border border-gray-100 p-4">
+                        <p className="text-[11px] font-bold text-purple-600 uppercase tracking-widest mb-3">🛡️ Defesa e Disciplina</p>
                         {[
-                            { l: 'Defesas Difíceis', v: saves, color: '#a78bfa' },
-                            { l: 'Cartões / Advertências', v: warnings, color: '#fbbf24' },
-                            { l: 'Média de Defesas/Jogo', v: savesPerGame, color: '#fff', bold: true },
+                            { l: 'Defesas Difíceis',       v: saves,       cls: 'text-purple-600' },
+                            { l: 'Cartões / Advertências', v: warnings,    cls: 'text-amber-500' },
+                            { l: 'Média de Defesas/Jogo',  v: savesPerGame, cls: 'text-gray-900', bold: true },
                         ].map((row, i, arr) => (
-                            <div key={row.l} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                                <span style={{ fontSize: 13, color: '#9ca3af', fontWeight: row.bold ? 700 : 400 }}>{row.l}</span>
-                                <span style={{ fontSize: 20, fontWeight: 900, color: row.color }}>{row.v}</span>
+                            <div key={row.l} className={`flex justify-between items-center py-2.5 ${i < arr.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                <span className={`text-sm ${row.bold ? 'text-gray-900 font-bold' : 'text-gray-500'}`}>{row.l}</span>
+                                <span className={`text-lg font-black ${row.cls}`}>{row.v}</span>
                             </div>
                         ))}
                     </div>
 
                     {/* Destaques */}
-                    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 16, border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <p style={{ fontSize: 11, fontWeight: 700, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 12px 0' }}>🏅 Histórico de Destaques</p>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
+                    <div className="rounded-2xl border border-gray-100 p-4">
+                        <p className="text-[11px] font-bold text-yellow-600 uppercase tracking-widest mb-3">🏅 Histórico de Destaques</p>
+                        <div className="grid grid-cols-4 gap-2 mb-4">
                             {[
-                                { emoji: '👑', v: top1, l: 'Craque', bg: 'rgba(234,179,8,0.12)', color: '#ca8a04' },
-                                { emoji: '🥈', v: top2, l: 'Top 2', bg: 'rgba(148,163,184,0.12)', color: '#94a3b8' },
-                                { emoji: '🥉', v: top3, l: 'Top 3', bg: 'rgba(234,88,12,0.12)', color: '#ea580c' },
-                                { emoji: '👮', v: sheriff, l: 'Xerife', bg: 'rgba(59,130,246,0.12)', color: '#3b82f6' },
+                                { emoji: '👑', v: top1,    l: 'Craque', bg: 'bg-yellow-50 border-yellow-200', color: 'text-yellow-700' },
+                                { emoji: '🥈', v: top2,    l: 'Top 2',  bg: 'bg-gray-50 border-gray-200',     color: 'text-gray-500' },
+                                { emoji: '🥉', v: top3,    l: 'Top 3',  bg: 'bg-orange-50 border-orange-200', color: 'text-orange-700' },
+                                { emoji: '👮', v: sheriff, l: 'Xerife', bg: 'bg-blue-50 border-blue-200',     color: 'text-[#093a9f]' },
                             ].map(d => (
-                                <div key={d.l} style={{ textAlign: 'center', padding: '10px 4px', borderRadius: 10, background: d.bg }}>
-                                    <div style={{ fontSize: 20 }}>{d.emoji}</div>
-                                    <div style={{ fontSize: 20, fontWeight: 900, color: d.color, lineHeight: 1.1 }}>{d.v}</div>
-                                    <div style={{ fontSize: 9, fontWeight: 700, color: d.color, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>{d.l}</div>
+                                <div key={d.l} className={`text-center p-2.5 rounded-xl border ${d.bg}`}>
+                                    <div className="text-lg">{d.emoji}</div>
+                                    <div className={`text-xl font-black leading-tight ${d.color}`}>{d.v}</div>
+                                    <div className={`text-[9px] font-bold uppercase tracking-wide mt-0.5 ${d.color}`}>{d.l}</div>
                                 </div>
                             ))}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderRadius: 10, background: 'linear-gradient(135deg, #1d4ed8, #4f46e5)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <span style={{ fontSize: 22 }}>🏅</span>
+                        <div className="flex items-center justify-between rounded-xl p-3.5 bg-[#093a9f]">
+                            <div className="flex items-center gap-3">
+                                <span className="text-xl">🏅</span>
                                 <div>
-                                    <p style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Pontuação Total de Destaques</p>
-                                    <p style={{ fontSize: 24, fontWeight: 900, color: '#fff', lineHeight: 1, margin: 0 }}>{points} pts</p>
+                                    <p className="text-[9px] font-bold text-white/60 uppercase tracking-widest">Pontuação Total</p>
+                                    <p className="text-2xl font-black text-white leading-none">{points} pts</p>
                                 </div>
                             </div>
-                            <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', textAlign: 'right', margin: 0 }}>Craque(3) Top2(2)<br />Top3(1) Xerife(1)</p>
+                            <p className="text-[9px] text-white/50 text-right leading-relaxed">Craque(3) Top2(2)<br />Top3(1) Xerife(1)</p>
                         </div>
                     </div>
 
                     {/* Campeonatos */}
                     {championships > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: 16, borderRadius: 12, background: 'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,215,0,0.04))', border: '1px solid rgba(255,215,0,0.25)' }}>
-                            <span style={{ fontSize: 40 }}>🏆</span>
+                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-yellow-50 border border-yellow-200">
+                            <div className="w-12 h-12 rounded-full bg-yellow-400 flex items-center justify-center flex-shrink-0">
+                                <Trophy size={22} className="text-white fill-white" />
+                            </div>
                             <div>
-                                <p style={{ fontSize: 22, fontWeight: 900, color: '#ffd700', lineHeight: 1, margin: 0 }}>{championships}x Campeão</p>
-                                <p style={{ fontSize: 12, color: 'rgba(255,215,0,0.6)', marginTop: 4 }}>Título{championships > 1 ? 's' : ''} de campeonato</p>
+                                <p className="text-xl font-black text-gray-900 leading-none">{championships}x Campeão</p>
+                                <p className="text-sm text-yellow-700 mt-1">Título{championships > 1 ? 's' : ''} de campeonato</p>
                             </div>
                         </div>
                     )}
@@ -386,13 +391,13 @@ export default function MembersList({ initialMembers, currentUserRole }: { initi
             {openMember && <MemberModal member={openMember} onClose={() => setOpenMember(null)} />}
 
             {/* Filtros */}
-            <div className="bg-white/5 backdrop-blur border border-white/10 p-4 rounded-xl mb-10 sticky top-4 z-10">
+            <div className="bg-gray-800 border border-gray-700 p-4 rounded-3xl mb-10 sticky top-28 z-10 shadow-xl">
                 <div className="flex flex-col md:flex-row gap-3 items-center">
                     <div className="relative w-full md:max-w-sm">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
                         <Input
                             placeholder="Buscar por nome..."
-                            className="pl-9 bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-white/40"
+                            className="pl-9 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus-visible:ring-gray-500 rounded-xl"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
@@ -403,15 +408,15 @@ export default function MembersList({ initialMembers, currentUserRole }: { initi
                         )}
                     </div>
                     <select
-                        className="h-10 px-3 rounded-md border border-white/20 bg-white/10 text-white text-sm w-full md:w-48 focus:outline-none"
+                        className="h-10 px-3 rounded-xl border border-gray-600 bg-gray-700 text-white text-sm w-full md:w-48 focus:outline-none"
                         value={selectedPosition || ''}
                         onChange={e => setSelectedPosition(e.target.value || null)}
                     >
-                        <option value="" className="bg-gray-900">Todas as posições</option>
-                        {positions.map(p => <option key={p} value={p} className="bg-gray-900">{p}</option>)}
+                        <option value="" className="bg-gray-800">Todas as posições</option>
+                        {positions.map(p => <option key={p} value={p} className="bg-gray-800">{p}</option>)}
                     </select>
                     {(searchTerm || selectedPosition) && (
-                        <button onClick={() => { setSearchTerm(''); setSelectedPosition(null); }} className="text-xs text-gray-400 hover:text-white whitespace-nowrap">
+                        <button onClick={() => { setSearchTerm(''); setSelectedPosition(null); }} className="text-xs text-gray-400 hover:text-white whitespace-nowrap transition-colors">
                             Limpar filtros
                         </button>
                     )}

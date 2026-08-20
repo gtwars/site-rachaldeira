@@ -1,13 +1,70 @@
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { Trophy, Target, Shield, Users, Star, AlertTriangle, Medal } from 'lucide-react';
+import { Trophy, Medal } from 'lucide-react';
 import VotingForm from '@/components/voting-form';
-import { redirect } from 'next/navigation';
-import RankingTable from './ranking-table';
 import HighlightsGrid from './highlights-grid';
 
 export const revalidate = 0;
+
+interface WeeklyMember {
+    id: string;
+    name: string;
+    position?: string;
+    photo_url?: string;
+}
+
+function WeeklyCard({ emoji, label, entries, bgGradient, accentColor, border }: {
+    emoji: string;
+    label: string;
+    entries: WeeklyMember[];
+    bgGradient: string;
+    accentColor: string;
+    border: string;
+}) {
+    const firstName = (name: string) => name.trim().split(' ')[0];
+    const single = entries.length === 1;
+    return (
+        <div className={`rounded-3xl ${border} border bg-white overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300`}>
+            {/* Colored gradient header */}
+            <div className={`bg-gradient-to-br ${bgGradient} px-4 pt-5 pb-10 text-center`}>
+                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-white drop-shadow-sm">{emoji} {label}</p>
+            </div>
+
+            {/* Players overlapping the gradient boundary */}
+            <div className="-mt-8 px-3 pb-5 flex flex-col items-center">
+                {entries.length > 0 ? (
+                    <div className="flex flex-wrap justify-center gap-3">
+                        {entries.map((m) => (
+                            <div key={m.id} className="flex flex-col items-center gap-1.5">
+                                <div
+                                    className={`${single ? 'w-20 h-20' : 'w-14 h-14'} rounded-full overflow-hidden bg-white shadow-lg flex-shrink-0`}
+                                    style={{ outline: `3px solid ${accentColor}`, outlineOffset: 2 }}
+                                >
+                                    {m.photo_url
+                                        ? <img src={m.photo_url} alt={m.name} className="w-full h-full object-cover object-center" />
+                                        : <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300 text-2xl">👤</div>
+                                    }
+                                </div>
+                                <div className="text-center">
+                                    <p className={`${single ? 'text-sm' : 'text-xs'} font-black text-gray-900 leading-tight`}>{firstName(m.name)}</p>
+                                    {m.position && <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">{m.position}</p>}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center gap-2 mt-2">
+                        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                            <span className="text-gray-300 text-2xl">?</span>
+                        </div>
+                        <p className="text-gray-300 text-sm font-bold mt-1">—</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
 
 export default async function RankingPage() {
     const supabase = await createClient();
@@ -82,39 +139,26 @@ export default async function RankingPage() {
         .limit(1)
         .single();
 
-    let weeklyHighlights = null;
-    if (lastRacha) {
-        // Buscar scouts deste racha para conferência interna (opcional, já temos no rachaScouts se for o mesmo id)
-        const weekScouts = rachaScouts?.filter(s => s.racha_id === lastRacha.id) || [];
+    let weeklyHighlights: {
+        rachaLabel: string;
+        craque: WeeklyMember[];
+        top2: WeeklyMember[];
+        top3: WeeklyMember[];
+        xerife: WeeklyMember[];
+    } | null = null;
 
-        // Buscar nomes dos destaques manuais
-        const top1 = members?.find(m => m.id === lastRacha.top1_id);
-        const top1_extra = members?.find(m => m.id === lastRacha.top1_extra_id);
-        const top1_extra2 = members?.find(m => m.id === lastRacha.top1_extra2_id);
-        const top2 = members?.find(m => m.id === lastRacha.top2_id);
-        const top2_extra = members?.find(m => m.id === lastRacha.top2_extra_id);
-        const top2_extra2 = members?.find(m => m.id === lastRacha.top2_extra2_id);
-        const top3 = members?.find(m => m.id === lastRacha.top3_id);
-        const top3_extra = members?.find(m => m.id === lastRacha.top3_extra_id);
-        const top3_extra2 = members?.find(m => m.id === lastRacha.top3_extra2_id);
-        const sheriff = members?.find(m => m.id === lastRacha.sheriff_id);
-        const sheriff_extra = members?.find(m => m.id === lastRacha.sheriff_extra_id);
-        const sheriff_extra2 = members?.find(m => m.id === lastRacha.sheriff_extra2_id);
+    if (lastRacha) {
+        const findMembers = (...ids: (string | null)[]) =>
+            ids.map(id => members?.find(m => m.id === id)).filter(Boolean).map(m => ({
+                id: m!.id, name: m!.name, position: m!.position, photo_url: m!.photo_url,
+            })) as WeeklyMember[];
 
         weeklyHighlights = {
             rachaLabel: new Date(lastRacha.date_time).toLocaleDateString('pt-BR'),
-            top1,
-            top1_extra,
-            top1_extra2,
-            top2,
-            top2_extra,
-            top2_extra2,
-            top3,
-            top3_extra,
-            top3_extra2,
-            sheriff,
-            sheriff_extra,
-            sheriff_extra2
+            craque: findMembers(lastRacha.top1_id, lastRacha.top1_extra_id, lastRacha.top1_extra2_id),
+            top2: findMembers(lastRacha.top2_id, lastRacha.top2_extra_id, lastRacha.top2_extra2_id),
+            top3: findMembers(lastRacha.top3_id, lastRacha.top3_extra_id, lastRacha.top3_extra2_id),
+            xerife: findMembers(lastRacha.sheriff_id, lastRacha.sheriff_extra_id, lastRacha.sheriff_extra2_id),
         };
     }
 
@@ -197,49 +241,36 @@ export default async function RankingPage() {
         };
     }) || [];
 
-
-    // Determinar badges (top 1 de cada categoria)
-    const maxGoals = Math.max(...rankings.map(r => r.goals), 0);
-    const maxAssists = Math.max(...rankings.map(r => r.assists), 0);
-    const maxSaves = Math.max(...rankings.map(r => r.saves), 0);
-    const maxParticipations = Math.max(...rankings.map(r => r.participations), 0);
-    const maxCraqueVotes = Math.max(...rankings.map(r => r.craqueVotes), 0);
-    const maxXerifeVotes = Math.max(...rankings.map(r => r.xerifeVotes), 0);
-
-    const rankingsWithBadges = rankings.map(r => ({
-        ...r,
-        badges: [
-            r.goals === maxGoals && maxGoals > 0 ? { icon: '🎯', label: 'Artilheiro' } : null,
-            r.assists === maxAssists && maxAssists > 0 ? { icon: '🍽️', label: 'Garçom' } : null,
-            r.saves === maxSaves && maxSaves > 0 ? { icon: '🧱', label: 'Paredão' } : null,
-            r.participations === maxParticipations && maxParticipations > 0 ? { icon: '🏃', label: 'Fominha' } : null,
-            r.craqueVotes === maxCraqueVotes && maxCraqueVotes > 0 ? { icon: '⭐', label: 'Craque' } : null,
-            r.xerifeVotes === maxXerifeVotes && maxXerifeVotes > 0 ? { icon: '👮', label: 'Xerife' } : null,
-        ].filter(Boolean),
-    }));
-
     return (
-        <main className="min-h-screen bg-white">
-            <div className="max-w-6xl mx-auto px-4 pt-0 pb-8">
-                <div className="text-center mb-6">
-                    <img
-                        src="https://pqroxmeyuicutatbessb.supabase.co/storage/v1/object/public/Fotos/logo%20premiacao%20rachaldeira.png"
-                        alt="Logo Premiação"
-                        className="h-[360px] mx-auto -mt-12 -mb-12 object-contain"
-                    />
-                    <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
-                        Premiação Anual 2026 - Rachaldeira
-                    </h1>
-                    <p className="text-xl text-gray-600">
-                        Os melhores jogadores do Rachaldeira
-                    </p>
+        <main className="min-h-screen bg-gray-50">
+            {/* Header editorial esquerdo */}
+            <div className="bg-white rounded-b-3xl">
+                <div className="max-w-6xl mx-auto px-4 pt-12 pb-10">
+                    <div className="flex items-center gap-6">
+                        <img
+                            src="https://pqroxmeyuicutatbessb.supabase.co/storage/v1/object/public/Fotos/logo%20premiacao%20rachaldeira.png"
+                            alt="Logo Premiação"
+                            className="h-36 md:h-44 object-contain flex-shrink-0"
+                        />
+                        <div>
+                            <p className="text-[#af1c15] text-xs font-bold uppercase tracking-[0.2em] mb-3">Premiação Anual</p>
+                            <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight mb-3">
+                                Ranking 2026
+                            </h1>
+                            <p className="text-gray-500 text-base md:text-lg max-w-xl">
+                                Os melhores jogadores do Rachaldeira
+                            </p>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
+            <div className="max-w-6xl mx-auto px-4 py-10">
                 {/* Período de Votação */}
                 {activePeriod && (
-                    <Card className="mb-8 border-2 border-yellow-400 bg-yellow-50">
+                    <Card className="mb-10 border border-yellow-200 bg-yellow-50 rounded-2xl shadow-none">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2 text-gray-900">
                                 <Trophy className="text-yellow-600" />
                                 Votação Aberta: {activePeriod.name}
                             </CardTitle>
@@ -261,14 +292,14 @@ export default async function RankingPage() {
                                     />
                                 </>
                             ) : userVote ? (
-                                <div className="bg-green-50 border border-green-200 rounded p-4">
+                                <div className="bg-white border border-green-200 rounded-xl p-4">
                                     <p className="text-green-800 font-semibold mb-2">✅ Você já votou neste período!</p>
                                     <p className="text-sm text-gray-700">
                                         Seus votos foram registrados com sucesso. Aguarde o resultado final.
                                     </p>
                                 </div>
                             ) : (
-                                <div className="bg-gray-50 border border-gray-200 rounded p-4">
+                                <div className="bg-white border border-gray-200 rounded-xl p-4">
                                     <p className="text-gray-700 text-sm">
                                         Você precisa estar cadastrado como membro para votar.
                                     </p>
@@ -280,386 +311,43 @@ export default async function RankingPage() {
 
                 {/* Destaques da Semana (Último Racha) */}
                 {weeklyHighlights && (
-                    <Card className="mb-8 border-none bg-gradient-to-r from-blue-900 to-blue-800 text-white shadow-xl overflow-hidden relative">
-                        {/* Background pattern */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
-
-                        <CardHeader className="relative z-10 border-b border-blue-700/50 pb-2">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="flex items-center gap-3 text-2xl text-white">
-                                    <Star className="text-yellow-400 fill-yellow-400" />
+                    <section className="mb-12">
+                        <div className="flex items-end justify-between gap-4 mb-5">
+                            <div>
+                                <p className="text-[#af1c15] text-xs font-bold uppercase tracking-[0.2em] mb-2">Último racha</p>
+                                <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
                                     Destaques da Semana
-                                </CardTitle>
-                                <span className="bg-blue-950/50 px-3 py-1 rounded-full text-sm font-medium border border-blue-700/50">
-                                    {weeklyHighlights.rachaLabel}
-                                </span>
+                                </h2>
                             </div>
-                            <p className="text-blue-200 text-sm">Os melhores do último racha realizado</p>
-                        </CardHeader>
-                        <CardContent className="relative z-10 pt-4 pb-6 px-0 md:px-6">
-                            {/* Mobile View - Cards Grid */}
-                            <div className="grid grid-cols-2 gap-3 md:hidden px-4">
-                                {/* Top 1 */}
-                                <div className="bg-white/10 rounded-lg p-3 text-center border border-white/10 flex flex-col justify-center min-h-[120px]">
-                                    <div className="text-2xl mb-1">👑</div>
-                                    <div className="font-bold text-yellow-300 text-[10px] uppercase mb-1">Craque</div>
-                                    <div className="font-bold text-white text-base leading-tight">
-                                        {weeklyHighlights.top1?.name || '-'}
-                                    </div>
-                                    {weeklyHighlights.top1?.position && (
-                                        <div className="text-[10px] text-yellow-200/70 mt-1 uppercase tracking-wider font-semibold">
-                                            {weeklyHighlights.top1.position}
-                                        </div>
-                                    )}
-                                    {weeklyHighlights.top1_extra && (
-                                        <div className="mt-2 pt-2 border-t border-white/10 flex flex-col items-center">
-                                            <div className="font-bold text-white text-base leading-tight">
-                                                {weeklyHighlights.top1_extra.name}
-                                            </div>
-                                            {weeklyHighlights.top1_extra.position && (
-                                                <div className="text-[10px] text-yellow-200/70 mt-1 uppercase tracking-wider font-semibold">
-                                                    {weeklyHighlights.top1_extra.position}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    {weeklyHighlights.top1_extra2 && (
-                                        <div className="mt-2 pt-2 border-t border-white/10 flex flex-col items-center">
-                                            <div className="font-bold text-white text-base leading-tight">
-                                                {weeklyHighlights.top1_extra2.name}
-                                            </div>
-                                            {weeklyHighlights.top1_extra2.position && (
-                                                <div className="text-[10px] text-yellow-200/70 mt-1 uppercase tracking-wider font-semibold">
-                                                    {weeklyHighlights.top1_extra2.position}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
+                            <span className="text-sm font-bold text-gray-400 whitespace-nowrap pb-1">
+                                {weeklyHighlights.rachaLabel}
+                            </span>
+                        </div>
 
-                                {/* Top 2 */}
-                                <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 flex flex-col justify-center min-h-[120px]">
-                                    <div className="text-2xl mb-1">🥈</div>
-                                    <div className="font-bold text-gray-300 text-[10px] uppercase mb-1">Top 2</div>
-                                    <div className="font-bold text-white text-base leading-tight">
-                                        {weeklyHighlights.top2?.name || '-'}
-                                    </div>
-                                    {weeklyHighlights.top2?.position && (
-                                        <div className="text-[10px] text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                            {weeklyHighlights.top2.position}
-                                        </div>
-                                    )}
-                                    {weeklyHighlights.top2_extra && (
-                                        <div className="mt-2 pt-2 border-t border-white/10 flex flex-col items-center">
-                                            <div className="font-bold text-white text-base leading-tight">
-                                                {weeklyHighlights.top2_extra.name}
-                                            </div>
-                                            {weeklyHighlights.top2_extra.position && (
-                                                <div className="text-[10px] text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                    {weeklyHighlights.top2_extra.position}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    {weeklyHighlights.top2_extra2 && (
-                                        <div className="mt-2 pt-2 border-t border-white/10 flex flex-col items-center">
-                                            <div className="font-bold text-white text-base leading-tight">
-                                                {weeklyHighlights.top2_extra2.name}
-                                            </div>
-                                            {weeklyHighlights.top2_extra2.position && (
-                                                <div className="text-[10px] text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                    {weeklyHighlights.top2_extra2.position}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Top 3 */}
-                                <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 flex flex-col justify-center min-h-[120px]">
-                                    <div className="text-2xl mb-1">🥉</div>
-                                    <div className="font-bold text-orange-300 text-[10px] uppercase mb-1">Top 3</div>
-                                    <div className="font-bold text-white text-base leading-tight">
-                                        {weeklyHighlights.top3?.name || '-'}
-                                    </div>
-                                    {weeklyHighlights.top3?.position && (
-                                        <div className="text-[10px] text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                            {weeklyHighlights.top3.position}
-                                        </div>
-                                    )}
-                                    {weeklyHighlights.top3_extra && (
-                                        <div className="mt-2 pt-2 border-t border-white/10 flex flex-col items-center">
-                                            <div className="font-bold text-white text-base leading-tight">
-                                                {weeklyHighlights.top3_extra.name}
-                                            </div>
-                                            {weeklyHighlights.top3_extra.position && (
-                                                <div className="text-[10px] text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                    {weeklyHighlights.top3_extra.position}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    {weeklyHighlights.top3_extra2 && (
-                                        <div className="mt-2 pt-2 border-t border-white/10 flex flex-col items-center">
-                                            <div className="font-bold text-white text-base leading-tight">
-                                                {weeklyHighlights.top3_extra2.name}
-                                            </div>
-                                            {weeklyHighlights.top3_extra2.position && (
-                                                <div className="text-[10px] text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                    {weeklyHighlights.top3_extra2.position}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Xerife */}
-                                <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 flex flex-col justify-center min-h-[120px]">
-                                    <div className="text-2xl mb-1">👮</div>
-                                    <div className="font-bold text-blue-300 text-[10px] uppercase mb-1">Xerife</div>
-                                    <div className="font-bold text-white text-base leading-tight">
-                                        {weeklyHighlights.sheriff?.name || '-'}
-                                    </div>
-                                    {weeklyHighlights.sheriff?.position && (
-                                        <div className="text-[10px] text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                            {weeklyHighlights.sheriff.position}
-                                        </div>
-                                    )}
-                                    {weeklyHighlights.sheriff_extra && (
-                                        <div className="mt-2 pt-2 border-t border-white/10 flex flex-col items-center">
-                                            <div className="font-bold text-white text-base leading-tight">
-                                                {weeklyHighlights.sheriff_extra.name}
-                                            </div>
-                                            {weeklyHighlights.sheriff_extra.position && (
-                                                <div className="text-[10px] text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                    {weeklyHighlights.sheriff_extra.position}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    {weeklyHighlights.sheriff_extra2 && (
-                                        <div className="mt-2 pt-2 border-t border-white/10 flex flex-col items-center">
-                                            <div className="font-bold text-white text-base leading-tight">
-                                                {weeklyHighlights.sheriff_extra2.name}
-                                            </div>
-                                            {weeklyHighlights.sheriff_extra2.position && (
-                                                <div className="text-[10px] text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                    {weeklyHighlights.sheriff_extra2.position}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Desktop View - Table */}
-                            <div className="hidden md:block overflow-x-auto rounded-lg border border-white/10">
-                                <Table>
-                                    <TableHeader className="bg-blue-950/50">
-                                        <TableRow className="hover:bg-transparent border-white/10">
-                                            <TableHead className="text-center font-bold text-white h-12 text-lg w-1/4">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <span>👑</span> Craque
-                                                </div>
-                                            </TableHead>
-                                            <TableHead className="text-center font-bold text-white h-12 text-lg w-1/4">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <span>🥈</span> Top 2
-                                                </div>
-                                            </TableHead>
-                                            <TableHead className="text-center font-bold text-orange-300 h-12 text-lg w-1/4">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <span>🥉</span> Top 3
-                                                </div>
-                                            </TableHead>
-                                            <TableHead className="text-center font-bold text-white h-12 text-lg w-1/4">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <span>👮</span> Xerife
-                                                </div>
-                                            </TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        <TableRow className="hover:bg-white/5 border-none">
-                                            <TableCell className="text-center py-6">
-                                                <div className="flex flex-col items-center gap-3">
-                                                    <div className="flex flex-col items-center">
-                                                        <span className="text-2xl font-black text-white tracking-wide drop-shadow-md">
-                                                            {weeklyHighlights.top1?.name || '-'}
-                                                        </span>
-                                                        {weeklyHighlights.top1?.position && (
-                                                            <span className="text-xs text-yellow-200/70 mt-1 uppercase tracking-wider font-semibold">
-                                                                {weeklyHighlights.top1.position}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    {weeklyHighlights.top1_extra && (
-                                                        <div className="flex flex-col items-center pt-2 border-t border-white/10 w-full">
-                                                            <span className="text-2xl font-black text-white tracking-wide drop-shadow-md">
-                                                                {weeklyHighlights.top1_extra.name}
-                                                            </span>
-                                                            {weeklyHighlights.top1_extra.position && (
-                                                                <span className="text-xs text-yellow-200/70 mt-1 uppercase tracking-wider font-semibold">
-                                                                    {weeklyHighlights.top1_extra.position}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                    {weeklyHighlights.top1_extra2 && (
-                                                        <div className="flex flex-col items-center pt-2 border-t border-white/10 w-full">
-                                                            <span className="text-2xl font-black text-white tracking-wide drop-shadow-md">
-                                                                {weeklyHighlights.top1_extra2.name}
-                                                            </span>
-                                                            {weeklyHighlights.top1_extra2.position && (
-                                                                <span className="text-xs text-yellow-200/70 mt-1 uppercase tracking-wider font-semibold">
-                                                                    {weeklyHighlights.top1_extra2.position}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-center py-6">
-                                                <div className="flex flex-col items-center gap-3">
-                                                    <div className="flex flex-col items-center">
-                                                        <span className="text-xl font-bold text-gray-100">
-                                                            {weeklyHighlights.top2?.name || '-'}
-                                                        </span>
-                                                        {weeklyHighlights.top2?.position && (
-                                                            <span className="text-xs text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                                {weeklyHighlights.top2.position}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    {weeklyHighlights.top2_extra && (
-                                                        <div className="flex flex-col items-center pt-2 border-t border-white/10 w-full">
-                                                            <span className="text-xl font-bold text-gray-100">
-                                                                {weeklyHighlights.top2_extra.name}
-                                                            </span>
-                                                            {weeklyHighlights.top2_extra.position && (
-                                                                <span className="text-xs text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                                    {weeklyHighlights.top2_extra.position}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                    {weeklyHighlights.top2_extra2 && (
-                                                        <div className="flex flex-col items-center pt-2 border-t border-white/10 w-full">
-                                                            <span className="text-xl font-bold text-gray-100">
-                                                                {weeklyHighlights.top2_extra2.name}
-                                                            </span>
-                                                            {weeklyHighlights.top2_extra2.position && (
-                                                                <span className="text-xs text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                                    {weeklyHighlights.top2_extra2.position}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-center py-6">
-                                                <div className="flex flex-col items-center gap-3">
-                                                    <div className="flex flex-col items-center">
-                                                        <span className="text-xl font-bold text-orange-50">
-                                                            {weeklyHighlights.top3?.name || '-'}
-                                                        </span>
-                                                        {weeklyHighlights.top3?.position && (
-                                                            <span className="text-xs text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                                {weeklyHighlights.top3.position}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    {weeklyHighlights.top3_extra && (
-                                                        <div className="flex flex-col items-center pt-2 border-t border-white/10 w-full">
-                                                            <span className="text-xl font-bold text-orange-50">
-                                                                {weeklyHighlights.top3_extra.name}
-                                                            </span>
-                                                            {weeklyHighlights.top3_extra.position && (
-                                                                <span className="text-xs text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                                    {weeklyHighlights.top3_extra.position}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                    {weeklyHighlights.top3_extra2 && (
-                                                        <div className="flex flex-col items-center pt-2 border-t border-white/10 w-full">
-                                                            <span className="text-xl font-bold text-orange-50">
-                                                                {weeklyHighlights.top3_extra2.name}
-                                                            </span>
-                                                            {weeklyHighlights.top3_extra2.position && (
-                                                                <span className="text-xs text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                                    {weeklyHighlights.top3_extra2.position}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-center py-6">
-                                                <div className="flex flex-col items-center gap-3">
-                                                    <div className="flex flex-col items-center">
-                                                        <span className="text-xl font-bold text-blue-50">
-                                                            {weeklyHighlights.sheriff?.name || '-'}
-                                                        </span>
-                                                        {weeklyHighlights.sheriff?.position && (
-                                                            <span className="text-xs text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                                {weeklyHighlights.sheriff.position}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    {weeklyHighlights.sheriff_extra && (
-                                                        <div className="flex flex-col items-center pt-2 border-t border-white/10 w-full">
-                                                            <span className="text-xl font-bold text-blue-50">
-                                                                {weeklyHighlights.sheriff_extra.name}
-                                                            </span>
-                                                            {weeklyHighlights.sheriff_extra.position && (
-                                                                <span className="text-xs text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                                    {weeklyHighlights.sheriff_extra.position}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                    {weeklyHighlights.sheriff_extra2 && (
-                                                        <div className="flex flex-col items-center pt-2 border-t border-white/10 w-full">
-                                                            <span className="text-xl font-bold text-blue-50">
-                                                                {weeklyHighlights.sheriff_extra2.name}
-                                                            </span>
-                                                            {weeklyHighlights.sheriff_extra2.position && (
-                                                                <span className="text-xs text-blue-200/50 mt-1 uppercase tracking-wider font-semibold">
-                                                                    {weeklyHighlights.sheriff_extra2.position}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </CardContent>
-                    </Card>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                            <WeeklyCard emoji="👑" label="Craque"  entries={weeklyHighlights.craque}  bgGradient="from-yellow-400 to-amber-300"   accentColor="#eab308" border="border-yellow-200" />
+                            <WeeklyCard emoji="🥈" label="Top 2"   entries={weeklyHighlights.top2}    bgGradient="from-slate-500 to-gray-400"     accentColor="#9ca3af" border="border-gray-200" />
+                            <WeeklyCard emoji="🥉" label="Top 3"   entries={weeklyHighlights.top3}    bgGradient="from-orange-500 to-amber-400"   accentColor="#f97316" border="border-orange-200" />
+                            <WeeklyCard emoji="👮" label="Xerife"  entries={weeklyHighlights.xerife}  bgGradient="from-[#093a9f] to-blue-500"     accentColor="#093a9f" border="border-blue-200" />
+                        </div>
+                    </section>
                 )}
 
-
-
-
-
                 {/* Highlights Grid (Cumulative) */}
-                <HighlightsGrid players={rankings} />
+                <HighlightsGrid players={rankings} weekly={weeklyHighlights} />
 
                 {/* Tabela de Pontuação por Destaques */}
-                <Card className="mt-12 border-none shadow-lg overflow-hidden">
-                    <CardHeader className="bg-gray-100 border-b">
-                        <CardTitle className="flex items-center gap-2 text-gray-800">
-                            <Medal className="h-6 w-6 text-blue-600" />
+                <Card className="mt-8 border border-gray-100 shadow-sm rounded-2xl overflow-hidden">
+                    <CardHeader className="bg-white border-b border-gray-100">
+                        <CardTitle className="flex items-center gap-2 text-gray-900">
+                            <Medal className="h-6 w-6 text-[#093a9f]" />
                             Pontuação do Dia - Tabela de Destaques
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
                         {/* Mobile View - Cards List */}
                         <div className="md:hidden divide-y divide-gray-100">
-                            {rankingsWithBadges
+                            {rankings
                                 .filter(p => p.points > 0)
                                 .sort((a, b) => b.points - a.points)
                                 .map((player, idx) => (
@@ -679,12 +367,12 @@ export default async function RankingPage() {
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-xl font-black text-blue-600">{player.points}</div>
+                                            <div className="text-xl font-black text-[#093a9f]">{player.points}</div>
                                             <div className="text-[9px] font-bold uppercase text-gray-400">Pontos</div>
                                         </div>
                                     </div>
                                 ))}
-                            {rankingsWithBadges.filter(p => p.points > 0).length === 0 && (
+                            {rankings.filter(p => p.points > 0).length === 0 && (
                                 <div className="p-8 text-center text-gray-500 italic">
                                     Nenhum ponto registrado ainda.
                                 </div>
@@ -694,18 +382,18 @@ export default async function RankingPage() {
                         {/* Desktop View - Table */}
                         <div className="hidden md:block">
                             <Table>
-                                <TableHeader className="bg-blue-600">
-                                    <TableRow className="border-none">
+                                <TableHeader className="bg-[#093a9f]">
+                                    <TableRow className="border-none hover:bg-transparent">
                                         <TableHead className="font-bold text-white">Nome</TableHead>
                                         <TableHead className="text-center font-bold text-white">Top 1 (3pts)</TableHead>
                                         <TableHead className="text-center font-bold text-white">Top 2 (2pts)</TableHead>
                                         <TableHead className="text-center font-bold text-white">Top 3 (1pt)</TableHead>
                                         <TableHead className="text-center font-bold text-white">Xerife (1pt)</TableHead>
-                                        <TableHead className="text-center font-bold text-white bg-blue-700">Total</TableHead>
+                                        <TableHead className="text-center font-bold text-white bg-[#072e7d]">Total</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {rankingsWithBadges
+                                    {rankings
                                         .filter(p => p.points > 0)
                                         .sort((a, b) => b.points - a.points)
                                         .map((player) => (
@@ -730,7 +418,7 @@ export default async function RankingPage() {
                                                 </TableCell>
                                             </TableRow>
                                         ))}
-                                    {rankingsWithBadges.filter(p => p.points > 0).length === 0 && (
+                                    {rankings.filter(p => p.points > 0).length === 0 && (
                                         <TableRow>
                                             <TableCell colSpan={6} className="text-center py-8 text-gray-500 italic">
                                                 Nenhum ponto registrado ainda.

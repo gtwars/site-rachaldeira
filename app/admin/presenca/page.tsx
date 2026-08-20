@@ -78,34 +78,39 @@ export default async function PresencaPage({
     return (
         <main className="min-h-screen bg-gray-50">
             {/* Header */}
-            <div className="bg-gradient-to-br from-[#093a9f] via-[#0d4bc4] to-[#093a9f] text-white">
-                <div className="max-w-5xl mx-auto px-4 pt-10 pb-12">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Users size={28} className="text-blue-300" />
-                        <h1 className="text-3xl md:text-4xl font-black tracking-tight">Presença dos Jogadores</h1>
-                    </div>
-                    <p className="text-blue-200 text-base">
-                        Frequência de cada integrante nos rachas — {periodLabel}
-                    </p>
-
-                    {totalRachas > 0 && (
-                        <div className="flex flex-wrap gap-6 mt-8">
-                            <div className="text-center">
-                                <p className="text-3xl font-black text-yellow-400">{totalRachas}</p>
-                                <p className="text-blue-300 text-sm">Rachas no período</p>
-                            </div>
-                            <div className="w-px bg-white/20 hidden sm:block" />
-                            <div className="text-center">
-                                <p className="text-3xl font-black text-yellow-400">{avgPct}%</p>
-                                <p className="text-blue-300 text-sm">Média de presença</p>
-                            </div>
-                            <div className="w-px bg-white/20 hidden sm:block" />
-                            <div className="text-center">
-                                <p className="text-3xl font-black text-yellow-400">{stats.length}</p>
-                                <p className="text-blue-300 text-sm">Integrantes ativos</p>
-                            </div>
+            <div className="bg-white border-b border-gray-100">
+                <div className="max-w-5xl mx-auto px-4 pt-12 pb-10">
+                    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+                        <div>
+                            <p className="flex items-center gap-2 text-[#af1c15] text-xs font-bold uppercase tracking-[0.2em] mb-3">
+                                <Users size={14} />
+                                Frequência
+                            </p>
+                            <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-3">
+                                Presença dos Jogadores
+                            </h1>
+                            <p className="text-gray-500 text-base">
+                                Frequência de cada integrante nos rachas — {periodLabel}
+                            </p>
                         </div>
-                    )}
+
+                        {totalRachas > 0 && (
+                            <div className="flex gap-10 md:pb-1">
+                                <div>
+                                    <p className="text-3xl font-black text-[#093a9f]">{totalRachas}</p>
+                                    <p className="text-gray-400 text-sm font-medium">Rachas no período</p>
+                                </div>
+                                <div>
+                                    <p className="text-3xl font-black text-[#093a9f]">{avgPct}%</p>
+                                    <p className="text-gray-400 text-sm font-medium">Média de presença</p>
+                                </div>
+                                <div>
+                                    <p className="text-3xl font-black text-[#093a9f]">{stats.length}</p>
+                                    <p className="text-gray-400 text-sm font-medium">Integrantes ativos</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
