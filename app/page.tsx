@@ -129,7 +129,7 @@ export default async function Home() {
                     src="/hero-bg.png"
                     alt="Rachaldeira"
                     fill
-                    className="object-cover object-[center_5%]"
+                    className="object-cover object-[center_20%] md:object-[center_5%]"
                     priority
                     sizes="100vw"
                 />

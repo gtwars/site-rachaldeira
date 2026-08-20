@@ -193,8 +193,11 @@ function FifaCard({ member, canEdit, onLevelChange, onOpen }: { member: Member; 
         position: 'relative', aspectRatio: '2 / 3',
         borderRadius: '16px',
         transformStyle: 'preserve-3d',
+        WebkitTransformStyle: 'preserve-3d' as any,
         transition: 'transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1)',
+        WebkitTransition: 'transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1)' as any,
         transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+        WebkitTransform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' as any,
         cursor: 'pointer',
     };
 
@@ -204,7 +207,7 @@ function FifaCard({ member, canEdit, onLevelChange, onOpen }: { member: Member; 
     };
 
     return (
-        <div className="select-none group" style={{ perspective: '1000px' }} onClick={() => setFlipped(f => !f)}>
+        <div className="select-none group" style={{ perspective: '1000px', WebkitPerspective: '1000px' } as any} onClick={() => setFlipped(f => !f)}>
             <div className="transition-transform duration-300 group-hover:scale-[1.04] group-hover:-translate-y-1" style={cardStyle}>
 
                 {/* ── FRENTE ── */}
@@ -288,7 +291,7 @@ function FifaCard({ member, canEdit, onLevelChange, onOpen }: { member: Member; 
                 </div>
 
                 {/* ── VERSO ── */}
-                <div style={{ ...faceBase, transform: 'rotateY(180deg)', border: `2px solid ${border}`, boxShadow: `0 0 16px ${border}44, 0 8px 32px rgba(0,0,0,0.85)`, pointerEvents: flipped ? 'auto' : 'none' }}>
+                <div style={{ ...faceBase, transform: 'rotateY(180deg)', WebkitTransform: 'rotateY(180deg)', border: `2px solid ${border}`, boxShadow: `0 0 16px ${border}44, 0 8px 32px rgba(0,0,0,0.85)`, pointerEvents: flipped ? 'auto' : 'none' } as any}>
                 <div style={{ position: 'absolute', inset: 0, borderRadius: '16px', overflow: 'hidden', background: '#0d0d1a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0, padding: '12% 8%' }}>
                     {/* Foto circular */}
                     <div style={{ width: '40%', aspectRatio: '1', borderRadius: '50%', overflow: 'hidden', border: `2px solid ${border}`, marginBottom: '6%', flexShrink: 0 }}>
