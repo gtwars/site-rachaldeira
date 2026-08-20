@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, CalendarDays, Trophy, BarChart3, Award, LogOut, Settings, Menu, X, User, Image as ImageIcon, Medal, ClipboardCheck } from 'lucide-react';
+import { Home, Users, CalendarDays, Trophy, BarChart3, Award, LogOut, Settings, Menu, X, User, Image as ImageIcon, Medal } from 'lucide-react';
 import NextImage from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,6 @@ export function Navbar({ user, profile, member }: NavbarProps) {
         { href: '/galeria', label: 'Galeria', icon: ImageIcon },
         { href: '/stats/2026', label: 'Estatísticas', icon: BarChart3 },
         { href: '/rank', label: 'Ranking', icon: Award },
-        { href: '/presenca', label: 'Presença', icon: ClipboardCheck },
     ];
 
     const adminLinks = [

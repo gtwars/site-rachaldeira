@@ -18,7 +18,7 @@ export function PresencaFilters({ current }: { current: string }) {
             {PERIODS.map((p) => (
                 <button
                     key={p.value}
-                    onClick={() => router.push(`/presenca?periodo=${p.value}`)}
+                    onClick={() => router.push(`/admin/presenca?periodo=${p.value}`)}
                     className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
                         current === p.value
                             ? 'bg-[#093a9f] text-white shadow-md'

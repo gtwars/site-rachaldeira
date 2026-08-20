@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, CalendarDays, Trophy, Home, LayoutDashboard, Shuffle, Image as ImageIcon, Menu, X, ChevronRight, Target, Bell } from 'lucide-react';
+import { Users, CalendarDays, Trophy, Home, LayoutDashboard, Shuffle, Image as ImageIcon, Menu, X, ChevronRight, Target, Bell, ClipboardCheck } from 'lucide-react';
 
 interface AdminClientLayoutProps {
     children: React.ReactNode;
@@ -27,6 +27,7 @@ export default function AdminClientLayout({
         { href: '/admin/galeria', label: 'Galeria', icon: ImageIcon },
         { href: '/admin/sorteio', label: 'Sorteio', icon: Shuffle },
         { href: '/admin/notificacoes', label: 'Notificações', icon: Bell },
+        { href: '/admin/presenca', label: 'Presença', icon: ClipboardCheck },
     ];
 
     const navItems = allNavItems;
