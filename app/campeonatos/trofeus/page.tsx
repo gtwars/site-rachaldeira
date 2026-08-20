@@ -80,7 +80,8 @@ export default async function TrofeusPage() {
             xerifao:xerifao_id(id, name, photo_url, position),
             paredao:paredao_id(id, name, photo_url, position),
             garcom:garcom_id(id, name, photo_url, position),
-            artilheiro:artilheiro_id(id, name, photo_url, position)
+            artilheiro:artilheiro_id(id, name, photo_url, position),
+            champion_team:champion_team_id(id, name, logo_url)
         `)
         .eq('status', 'completed')
         .order('start_date', { ascending: false });
@@ -89,6 +90,12 @@ export default async function TrofeusPage() {
     const championsMap: Record<string, any> = {};
     if (championships && championships.length > 0) {
         for (const camp of championships) {
+            // Se houver campeão definido manualmente, usa ele
+            if ((camp as any).champion_team) {
+                championsMap[camp.id] = (camp as any).champion_team;
+                continue;
+            }
+
             const { data: matches } = await supabase
                 .from('championship_matches')
                 .select('*, team_a:team_a_id(id, name, logo_url), team_b:team_b_id(id, name, logo_url)')
