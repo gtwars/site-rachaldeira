@@ -132,33 +132,33 @@ export default function RachaAttendance({ rachaId, initialStatus, isOpen, isAdmi
             <h3 className="text-lg font-bold text-gray-900 mb-3">Confirmação de Presença</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Button
-                    className={`h-14 text-lg font-bold transition-all shadow-md ${status === 'in'
-                        ? 'bg-green-700 text-white ring-4 ring-green-300 scale-[1.02]'
-                        : 'bg-green-500 hover:bg-green-600 text-white opacity-90 hover:opacity-100'
+                    className={`h-14 text-base font-bold rounded-2xl transition-all ${status === 'in'
+                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-600 ring-offset-2'
+                        : 'bg-white text-emerald-700 border-2 border-emerald-200 shadow-none hover:border-emerald-500 hover:bg-emerald-50'
                         }`}
                     onClick={() => handleAttendance('in')}
                     disabled={loading}
                 >
                     {loading && status === 'in' ? 'Salvando...' : (
                         <div className="flex items-center gap-2">
-                            <Check className="h-6 w-6" strokeWidth={3} />
-                            CONFIRMAR PRESENÇA
+                            <Check className="h-5 w-5" strokeWidth={3} />
+                            Confirmar Presença
                         </div>
                     )}
                 </Button>
 
                 <Button
-                    className={`h-14 text-lg font-bold transition-all shadow-md ${status === 'out'
-                        ? 'bg-red-700 text-white ring-4 ring-red-300 scale-[1.02]'
-                        : 'bg-red-500 hover:bg-red-600 text-white opacity-90 hover:opacity-100'
+                    className={`h-14 text-base font-bold rounded-2xl transition-all ${status === 'out'
+                        ? 'bg-[#af1c15] text-white shadow-md shadow-red-600/25 ring-2 ring-[#af1c15] ring-offset-2'
+                        : 'bg-white text-[#af1c15] border-2 border-red-200 shadow-none hover:border-[#af1c15] hover:bg-red-50'
                         }`}
                     onClick={() => handleAttendance('out')}
                     disabled={loading}
                 >
                     {loading && status === 'out' ? 'Salvando...' : (
                         <div className="flex items-center gap-2">
-                            <X className="h-6 w-6" strokeWidth={3} />
-                            NÃO VOU
+                            <X className="h-5 w-5" strokeWidth={3} />
+                            Não Vou
                         </div>
                     )}
                 </Button>

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Toggle, GooeyFilter } from '@/components/ui/liquid-toggle';
 
 interface Player {
     id: string;
@@ -17,13 +18,28 @@ interface Player {
     points: number;
 }
 
+interface WeeklyMember {
+    id: string;
+    name: string;
+    position?: string;
+}
+
+interface WeeklyHighlights {
+    rachaLabel: string;
+    craque: WeeklyMember[];
+    top2: WeeklyMember[];
+    top3: WeeklyMember[];
+    xerife: WeeklyMember[];
+}
+
 interface HighlightsGridProps {
     players: Player[];
+    weekly?: WeeklyHighlights | null;
 }
 
 import { Trophy, Target, Shield, Users, Star, Flame, Award } from 'lucide-react';
 
-const HighlightsGrid = ({ players }: HighlightsGridProps) => {
+const HighlightsGrid = ({ players, weekly }: HighlightsGridProps) => {
     const [isPrintMode, setIsPrintMode] = React.useState(false);
 
     // Get all players for each category, sorted
@@ -100,22 +116,20 @@ const HighlightsGrid = ({ players }: HighlightsGridProps) => {
     return (
         <div className="w-full pb-12">
             <div className="justify-end mb-4 px-4 no-print hidden md:flex">
-                <button
-                    onClick={() => setIsPrintMode(!isPrintMode)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all shadow-md ${isPrintMode
-                        ? 'bg-blue-600 text-white scale-105'
-                        : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                        }`}
-                >
-                    {isPrintMode ? (
-                        <>🖨️ Sair do Modo Print</>
-                    ) : (
-                        <>📸 Ativar Modo Print (Screenshot)</>
-                    )}
-                </button>
+                <GooeyFilter />
+                <label className="flex items-center gap-3 cursor-pointer select-none bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm hover:bg-gray-50 transition-colors">
+                    <span className="text-sm font-bold text-gray-600">
+                        {isPrintMode ? '🖨️ Modo Print ativo' : '📸 Modo Print'}
+                    </span>
+                    <Toggle
+                        checked={isPrintMode}
+                        onCheckedChange={setIsPrintMode}
+                        variant="default"
+                    />
+                </label>
             </div>
 
-            <div className={`px-4 py-2 ${isPrintMode
+<div className={`px-4 py-2 ${isPrintMode
                 ? 'grid grid-cols-6 gap-2 max-w-full'
                 : 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8'
                 }`}>

@@ -245,8 +245,8 @@ export default function UserProfilePage() {
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-            <p className="text-gray-400 text-sm">Carregando perfil...</p>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <p className="text-gray-500 text-sm">Carregando perfil...</p>
         </div>
     );
 
@@ -260,57 +260,51 @@ export default function UserProfilePage() {
     const goalsPerGame = stats.matches > 0 ? (stats.goals / stats.matches).toFixed(2) : '0.00';
     const savesPerGame = stats.matches > 0 ? (stats.saves / stats.matches).toFixed(2) : '0.00';
 
-    const inputClass = "w-full bg-white/5 border border-white/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-white/30 placeholder:text-gray-600";
-    const sectionClass = "rounded-2xl p-5 space-y-4" + " " + "bg-[#0d0d1a] border border-white/7";
+    const inputClass = "w-full bg-white border border-gray-200 text-gray-900 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#093a9f] placeholder:text-gray-400";
 
     return (
-        <div className="min-h-screen bg-gray-950 py-10 px-4">
+        <div className="py-10 px-4">
             <div className="max-w-3xl mx-auto space-y-5">
-                <h1 className="text-2xl font-black text-white tracking-tight">Meu Perfil</h1>
+                <div>
+                    <p className="text-[#af1c15] text-xs font-bold uppercase tracking-[0.2em] mb-2">Minha conta</p>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Meu Perfil</h1>
+                </div>
 
                 {/* ── HEADER CARD ── */}
-                <div className="rounded-2xl" style={{ background: '#0d0d1a', border: `1.5px solid ${border}33`, boxShadow: `0 0 40px ${border}18` }}>
-                    {/* Banner */}
-                    <div className="h-24 rounded-t-2xl overflow-hidden relative" style={{ background: `linear-gradient(135deg, ${border}40 0%, #0d0d1a 80%)` }}>
-                        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(255,255,255,.04) 20px,rgba(255,255,255,.04) 40px)' }} />
-                    </div>
-
-                    <div className="px-6 pb-6">
-                        {/* Avatar + Info em row, avatar com -mt para sobreposição */}
-                        <div className="flex items-end gap-4 -mt-12">
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm">
+                    <div className="px-6 py-6">
+                        <div className="flex items-center gap-4">
                             {/* Avatar */}
                             <div className="relative flex-shrink-0 z-10">
-                                <div className="w-24 h-24 rounded-full overflow-hidden" style={{ border: `3px solid ${border}`, boxShadow: `0 0 20px ${border}66`, background: '#0d0d1a' }}>
+                                <div className="w-24 h-24 rounded-full overflow-hidden bg-white" style={{ border: `3px solid ${border}`, boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>
                                     {formData.photo_url ? (
-                                        <NextImage src={formData.photo_url} alt={formData.name} width={96} height={96} className="w-full h-full object-cover object-top" />
+                                        <NextImage src={formData.photo_url} alt={formData.name} width={96} height={96} className="w-full h-full object-cover" style={{ objectPosition: 'center 30%' }} />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-gray-900">
-                                            <User size={32} className="text-gray-500" />
+                                        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                                            <User size={32} className="text-gray-400" />
                                         </div>
                                     )}
                                 </div>
                                 {isEditing && (
-                                    <label className="absolute -bottom-1 -right-1 p-1.5 rounded-full cursor-pointer z-20" style={{ background: border }}>
-                                        <Upload size={12} className="text-gray-900" />
+                                    <label className="absolute -bottom-1 -right-1 p-1.5 rounded-full cursor-pointer z-20 bg-[#093a9f] shadow">
+                                        <Upload size={12} className="text-white" />
                                         <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={saveStatus === 'saving'} />
                                     </label>
                                 )}
                             </div>
 
-                            {/* Info — alinhado à base do avatar */}
-                            <div className="flex-1 min-w-0 pb-1">
-                                <h2 className="text-xl font-black text-white truncate">{formData.name || 'Sem nome'}</h2>
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-xl font-black text-gray-900 truncate">{formData.name || 'Sem nome'}</h2>
                                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                     {rawPos && (
-                                        <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: `${border}22`, color: border, border: `1px solid ${border}44` }}>
+                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-[#093a9f] border border-blue-100">
                                             {rawPos}
                                         </span>
                                     )}
                                     {member && (
-                                        <>
-                                            <span className="text-xs font-bold" style={{ color: border }}>Nv {level} — {label}</span>
-                                            <span className="text-xs font-black" style={{ color: border }}>{rating}</span>
-                                        </>
+                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold" style={{ background: `${border}1e`, color: level === 3 ? '#a16207' : border, border: `1px solid ${border}55` }}>
+                                            Nv {level} — {label} · {rating}
+                                        </span>
                                     )}
                                 </div>
                             </div>
@@ -319,8 +313,7 @@ export default function UserProfilePage() {
                             {!isEditing && (
                                 <button
                                     onClick={() => setIsEditing(true)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors mb-1"
-                                    style={{ background: 'rgba(255,255,255,0.06)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.1)' }}
+                                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold mb-1 bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:text-gray-900 transition-colors shadow-sm"
                                 >
                                     <Edit2 size={12} /> Editar
                                 </button>
@@ -330,14 +323,14 @@ export default function UserProfilePage() {
                         {/* 4 stats rápidos */}
                         <div className="grid grid-cols-4 gap-2 mt-5">
                             {[
-                                { value: stats.matches,       label: 'Jogos',   color: '#fff' },
-                                { value: stats.goals,         label: 'Gols',    color: '#4ade80' },
-                                { value: stats.assists,       label: 'Assist.', color: '#60a5fa' },
-                                { value: stats.championships, label: 'Títulos', color: '#ffd700' },
+                                { value: stats.matches,       label: 'Jogos',   color: 'text-gray-900' },
+                                { value: stats.goals,         label: 'Gols',    color: 'text-emerald-600' },
+                                { value: stats.assists,       label: 'Assist.', color: 'text-[#093a9f]' },
+                                { value: stats.championships, label: 'Títulos', color: 'text-yellow-600' },
                             ].map(s => (
-                                <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                                    <p className="text-xl font-black leading-none" style={{ color: s.color }}>{s.value}</p>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wider mt-1.5 text-gray-500">{s.label}</p>
+                                <div key={s.label} className="rounded-xl p-3 text-center bg-gray-50 border border-gray-100">
+                                    <p className={`text-xl font-black leading-none ${s.color}`}>{s.value}</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wider mt-1.5 text-gray-400">{s.label}</p>
                                 </div>
                             ))}
                         </div>
@@ -346,7 +339,7 @@ export default function UserProfilePage() {
 
                 {/* ── EDIÇÃO DE PERFIL ── */}
                 {isEditing && (
-                    <div className="rounded-2xl p-5 space-y-4" style={{ background: '#0d0d1a', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 space-y-4">
                         <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Editar Informações</p>
 
                         <div className="space-y-1.5">
@@ -357,8 +350,8 @@ export default function UserProfilePage() {
                         <div className="space-y-1.5">
                             <Label htmlFor="position">Posição Principal</Label>
                             <select id="position" className={inputClass} value={formData.position} onChange={e => setFormData({ ...formData, position: e.target.value })} disabled={saveStatus === 'saving'}>
-                                <option value="" className="bg-gray-900">Selecione...</option>
-                                {POSITIONS.map(p => <option key={p.value} value={p.value} className="bg-gray-900">{p.label}</option>)}
+                                <option value="">Selecione...</option>
+                                {POSITIONS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                             </select>
                         </div>
 
@@ -366,8 +359,7 @@ export default function UserProfilePage() {
                             <button
                                 onClick={handleSave}
                                 disabled={saveStatus === 'saving'}
-                                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-bold transition-opacity disabled:opacity-50"
-                                style={{ background: '#16a34a', color: '#fff' }}
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-500 transition-colors disabled:opacity-50"
                             >
                                 <Save size={14} />
                                 {saveStatus === 'saving' ? 'Salvando...' : 'Salvar'}
@@ -375,8 +367,7 @@ export default function UserProfilePage() {
                             <button
                                 onClick={() => { setIsEditing(false); loadProfile(); }}
                                 disabled={saveStatus === 'saving'}
-                                className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-400 transition-colors"
-                                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
                             >
                                 Cancelar
                             </button>
@@ -387,68 +378,68 @@ export default function UserProfilePage() {
                 {/* ── STATS: OFENSIVA + DEFESA ── */}
                 <div className="grid sm:grid-cols-2 gap-4">
                     {/* Produção Ofensiva */}
-                    <div className="rounded-2xl p-5" style={{ background: '#0d0d1a', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
                         <div className="flex items-center gap-2 mb-4">
-                            <Activity size={13} className="text-green-400" />
-                            <p className="text-[11px] font-bold uppercase tracking-widest text-green-400">Produção Ofensiva</p>
+                            <Activity size={13} className="text-emerald-600" />
+                            <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-600">Produção Ofensiva</p>
                         </div>
                         {[
-                            { label: 'Gols Marcados',      value: stats.goals,   color: '#4ade80' },
-                            { label: 'Assistências',        value: stats.assists, color: '#60a5fa' },
-                            { label: 'Média de Gols/Jogo', value: goalsPerGame,  color: '#fff', bold: true },
+                            { label: 'Gols Marcados',      value: stats.goals,   color: 'text-emerald-600' },
+                            { label: 'Assistências',        value: stats.assists, color: 'text-[#093a9f]' },
+                            { label: 'Média de Gols/Jogo', value: goalsPerGame,  color: 'text-gray-900', bold: true },
                         ].map((row, i, arr) => (
-                            <div key={row.label} className="flex justify-between items-center py-2.5" style={{ borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                                <span className="text-sm" style={{ color: row.bold ? '#e5e7eb' : '#9ca3af', fontWeight: row.bold ? 700 : 400 }}>{row.label}</span>
-                                <span className="text-lg font-black" style={{ color: row.color }}>{row.value}</span>
+                            <div key={row.label} className={`flex justify-between items-center py-2.5 ${i < arr.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                <span className={`text-sm ${row.bold ? 'text-gray-900 font-bold' : 'text-gray-500'}`}>{row.label}</span>
+                                <span className={`text-lg font-black ${row.color}`}>{row.value}</span>
                             </div>
                         ))}
                     </div>
 
                     {/* Defesa e Disciplina */}
-                    <div className="rounded-2xl p-5" style={{ background: '#0d0d1a', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
                         <div className="flex items-center gap-2 mb-4">
-                            <Shield size={13} className="text-purple-400" />
-                            <p className="text-[11px] font-bold uppercase tracking-widest text-purple-400">Defesa e Disciplina</p>
+                            <Shield size={13} className="text-purple-600" />
+                            <p className="text-[11px] font-bold uppercase tracking-widest text-purple-600">Defesa e Disciplina</p>
                         </div>
                         {[
-                            { label: 'Defesas Difíceis',      value: stats.saves,    color: '#a78bfa' },
-                            { label: 'Cartões / Advertências', value: stats.warnings, color: '#fbbf24' },
-                            { label: 'Média de Defesas/Jogo',  value: savesPerGame,   color: '#fff', bold: true },
+                            { label: 'Defesas Difíceis',      value: stats.saves,    color: 'text-purple-600' },
+                            { label: 'Cartões / Advertências', value: stats.warnings, color: 'text-amber-500' },
+                            { label: 'Média de Defesas/Jogo',  value: savesPerGame,   color: 'text-gray-900', bold: true },
                         ].map((row, i, arr) => (
-                            <div key={row.label} className="flex justify-between items-center py-2.5" style={{ borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                                <span className="text-sm" style={{ color: row.bold ? '#e5e7eb' : '#9ca3af', fontWeight: row.bold ? 700 : 400 }}>{row.label}</span>
-                                <span className="text-lg font-black" style={{ color: row.color }}>{row.value}</span>
+                            <div key={row.label} className={`flex justify-between items-center py-2.5 ${i < arr.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                <span className={`text-sm ${row.bold ? 'text-gray-900 font-bold' : 'text-gray-500'}`}>{row.label}</span>
+                                <span className={`text-lg font-black ${row.color}`}>{row.value}</span>
                             </div>
                         ))}
                     </div>
                 </div>
 
                 {/* ── DESTAQUES ── */}
-                <div className="rounded-2xl p-5" style={{ background: '#0d0d1a', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
                     <div className="flex items-center gap-2 mb-4">
-                        <Trophy size={13} className="text-yellow-400" />
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-yellow-400">Histórico de Destaques</p>
+                        <Trophy size={13} className="text-yellow-600" />
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-yellow-600">Histórico de Destaques</p>
                     </div>
 
                     <div className="grid grid-cols-4 gap-3 mb-4">
                         {[
-                            { icon: Crown,  label: 'Craque', value: stats.top1,    bg: 'rgba(234,179,8,0.1)',   color: '#ca8a04', bdr: 'rgba(234,179,8,0.2)' },
-                            { icon: Star,   label: 'Top 2',  value: stats.top2,    bg: 'rgba(148,163,184,0.1)', color: '#94a3b8', bdr: 'rgba(148,163,184,0.2)' },
-                            { icon: Award,  label: 'Top 3',  value: stats.top3,    bg: 'rgba(234,88,12,0.1)',   color: '#ea580c', bdr: 'rgba(234,88,12,0.2)' },
-                            { icon: Shield, label: 'Xerife', value: stats.sheriff, bg: 'rgba(59,130,246,0.1)',  color: '#3b82f6', bdr: 'rgba(59,130,246,0.2)' },
+                            { icon: Crown,  label: 'Craque', value: stats.top1,    bg: 'bg-yellow-50', bdr: 'border-yellow-200', color: 'text-yellow-700' },
+                            { icon: Star,   label: 'Top 2',  value: stats.top2,    bg: 'bg-gray-50',   bdr: 'border-gray-200',   color: 'text-gray-500' },
+                            { icon: Award,  label: 'Top 3',  value: stats.top3,    bg: 'bg-orange-50', bdr: 'border-orange-200', color: 'text-orange-700' },
+                            { icon: Shield, label: 'Xerife', value: stats.sheriff, bg: 'bg-blue-50',   bdr: 'border-blue-200',   color: 'text-[#093a9f]' },
                         ].map(d => {
                             const Icon = d.icon;
                             return (
-                                <div key={d.label} className="rounded-xl p-3 text-center" style={{ background: d.bg, border: `1px solid ${d.bdr}` }}>
-                                    <Icon size={14} className="mx-auto mb-1.5" style={{ color: d.color }} />
-                                    <p className="text-xl font-black leading-none" style={{ color: d.color }}>{d.value}</p>
-                                    <p className="text-[9px] font-bold uppercase tracking-wider mt-1.5" style={{ color: d.color }}>{d.label}</p>
+                                <div key={d.label} className={`rounded-xl p-3 text-center ${d.bg} border ${d.bdr}`}>
+                                    <Icon size={14} className={`mx-auto mb-1.5 ${d.color}`} />
+                                    <p className={`text-xl font-black leading-none ${d.color}`}>{d.value}</p>
+                                    <p className={`text-[9px] font-bold uppercase tracking-wider mt-1.5 ${d.color}`}>{d.label}</p>
                                 </div>
                             );
                         })}
                     </div>
 
-                    <div className="flex items-center justify-between rounded-xl p-4" style={{ background: 'linear-gradient(135deg, #1d4ed8, #4f46e5)' }}>
+                    <div className="flex items-center justify-between rounded-xl p-4 bg-[#093a9f]">
                         <div className="flex items-center gap-3">
                             <div className="p-2 rounded-lg bg-white/10"><Medal size={16} className="text-white" /></div>
                             <div>
@@ -456,7 +447,7 @@ export default function UserProfilePage() {
                                 <p className="text-2xl font-black text-white leading-none">{points} pts</p>
                             </div>
                         </div>
-                        <p className="text-[9px] text-white/40 text-right hidden sm:block leading-relaxed">
+                        <p className="text-[9px] text-white/50 text-right hidden sm:block leading-relaxed">
                             Craque (3) · Top 2 (2)<br />Top 3 (1) · Xerife (1)
                         </p>
                     </div>
@@ -464,10 +455,12 @@ export default function UserProfilePage() {
 
                 {/* ── TÍTULO ── */}
                 {stats.championships > 0 && (
-                    <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.2)' }}>
-                        <Trophy size={32} style={{ color: '#ffd700', flexShrink: 0 }} />
+                    <div className="rounded-3xl p-5 flex items-center gap-4 bg-yellow-50 border border-yellow-200">
+                        <div className="w-12 h-12 rounded-full bg-yellow-400 flex items-center justify-center flex-shrink-0">
+                            <Trophy size={22} className="text-white fill-white" />
+                        </div>
                         <div>
-                            <p className="text-xl font-black" style={{ color: '#ffd700' }}>{stats.championships}x Campeão</p>
+                            <p className="text-xl font-black text-gray-900">{stats.championships}x Campeão</p>
                             <p className="text-sm text-yellow-700 mt-0.5">Título{stats.championships > 1 ? 's' : ''} de campeonato</p>
                         </div>
                     </div>
@@ -475,17 +468,16 @@ export default function UserProfilePage() {
 
                 {/* ── GALERIA ── */}
                 {member && (
-                    <div className="rounded-2xl p-5" style={{ background: '#0d0d1a', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
                         <div className="flex items-center gap-2 mb-4">
-                            <Camera size={13} className="text-purple-400" />
-                            <p className="text-[11px] font-bold uppercase tracking-widest text-purple-400">Galeria</p>
+                            <Camera size={13} className="text-[#093a9f]" />
+                            <p className="text-[11px] font-bold uppercase tracking-widest text-[#093a9f]">Galeria</p>
                         </div>
 
                         {!showGalleryUpload ? (
                             <button
                                 onClick={() => setShowGalleryUpload(true)}
-                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors"
-                                style={{ background: 'rgba(147,51,234,0.15)', color: '#a78bfa', border: '1px solid rgba(147,51,234,0.3)' }}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold bg-blue-50 text-[#093a9f] border border-blue-100 hover:bg-blue-100 transition-colors"
                             >
                                 <Upload size={14} /> Enviar Foto / Vídeo
                             </button>
@@ -494,8 +486,8 @@ export default function UserProfilePage() {
                                 <div className="space-y-1.5">
                                     <Label htmlFor="gallery-type">Tipo</Label>
                                     <select id="gallery-type" className={inputClass} value={galleryType} onChange={e => setGalleryType(e.target.value as 'photo' | 'video')}>
-                                        <option value="photo" className="bg-gray-900">Foto</option>
-                                        <option value="video" className="bg-gray-900">Vídeo</option>
+                                        <option value="photo">Foto</option>
+                                        <option value="video">Vídeo</option>
                                     </select>
                                 </div>
                                 <div className="space-y-1.5">
@@ -510,16 +502,14 @@ export default function UserProfilePage() {
                                     <button
                                         onClick={handleGalleryUpload}
                                         disabled={!galleryFile || galleryUploading}
-                                        className="flex-1 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
-                                        style={{ background: 'rgba(147,51,234,0.3)', color: '#a78bfa', border: '1px solid rgba(147,51,234,0.4)' }}
+                                        className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-[#093a9f] text-white hover:bg-[#0b46bd] transition-colors disabled:opacity-50"
                                     >
                                         {galleryUploading ? 'Enviando...' : 'Enviar'}
                                     </button>
                                     <button
                                         onClick={() => { setShowGalleryUpload(false); setGalleryFile(null); setGalleryCaption(''); }}
                                         disabled={galleryUploading}
-                                        className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-400"
-                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                        className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
                                     >
                                         Cancelar
                                     </button>

@@ -173,11 +173,30 @@ export default async function IntegrantesPage() {
 
     return (
         <main className="min-h-screen bg-gray-900">
-            <div className="max-w-7xl mx-auto px-4 py-10">
-                <div className="text-center mb-12">
-                    <h1 className="text-5xl font-black text-white mb-3 tracking-tight">Elenco</h1>
-                    <p className="text-gray-400 text-lg">Conheça o elenco estelar (e nem tanto) do Rachaldeira</p>
+            {/* Header editorial */}
+            <div className="bg-white rounded-b-3xl">
+                <div className="max-w-7xl mx-auto px-4 pt-12 pb-10">
+                    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+                        <div>
+                            <p className="text-[#af1c15] text-xs font-bold uppercase tracking-[0.2em] mb-3">Elenco</p>
+                            <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight mb-3">
+                                Integrantes
+                            </h1>
+                            <p className="text-gray-500 text-base md:text-lg max-w-xl">
+                                Conheça o elenco estelar (e nem tanto) do Rachaldeira
+                            </p>
+                        </div>
+                        <div className="flex gap-10 md:pb-1">
+                            <div>
+                                <p className="text-3xl font-black text-[#093a9f]">{(membersWithStats || []).length}</p>
+                                <p className="text-gray-400 text-sm font-medium">Jogadores</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            <div className="max-w-7xl mx-auto px-4 py-10">
                 <MembersList initialMembers={membersWithStats} currentUserRole={currentUserRole} />
             </div>
         </main>

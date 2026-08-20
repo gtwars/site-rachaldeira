@@ -21,7 +21,7 @@ function AwardBadge({ emoji, label, member, bg, border, labelColor }: {
                         <img
                             src={member.photo_url}
                             alt={member.name}
-                            className="w-full h-full object-cover object-top"
+                            className="w-full h-full object-cover object-center"
                         />
                     ) : (
                         <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-lg">
@@ -148,36 +148,35 @@ export default async function TrofeusPage() {
     return (
         <main className="min-h-screen bg-gray-50">
             {/* Header */}
-            <div className="relative bg-gradient-to-br from-[#093a9f] via-[#0d4bc4] to-[#093a9f] text-white overflow-hidden">
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-0 left-1/4 w-96 h-96 bg-yellow-400 rounded-full blur-3xl -translate-y-1/2" />
-                    <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-white rounded-full blur-3xl translate-y-1/2" />
-                </div>
-                <div className="relative max-w-6xl mx-auto px-4 pt-12 pb-16 text-center">
-                    <div className="inline-flex items-center gap-2 bg-yellow-400/20 border border-yellow-400/30 text-yellow-300 text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-6">
-                        <Medal size={14} />
-                        Hall da Fama
-                    </div>
-                    <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight">
-                        Troféus & Campeões
-                    </h1>
-                    <p className="text-blue-200 text-lg max-w-xl mx-auto">
-                        A história de cada campeonato, os times que venceram e os jogadores que brilharam.
-                    </p>
-
-                    {championships && championships.length > 0 && (
-                        <div className="flex justify-center gap-8 mt-10">
-                            <div className="text-center">
-                                <p className="text-3xl font-black text-yellow-400">{championships.length}</p>
-                                <p className="text-blue-300 text-sm">Campeonatos</p>
-                            </div>
-                            <div className="w-px bg-white/20" />
-                            <div className="text-center">
-                                <p className="text-3xl font-black text-yellow-400">{totalAwards}</p>
-                                <p className="text-blue-300 text-sm">Prêmios Entregues</p>
-                            </div>
+            <div className="bg-white border-b border-gray-100">
+                <div className="max-w-6xl mx-auto px-4 pt-12 pb-10">
+                    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+                        <div>
+                            <p className="flex items-center gap-2 text-[#af1c15] text-xs font-bold uppercase tracking-[0.2em] mb-3">
+                                <Medal size={14} />
+                                Hall da Fama
+                            </p>
+                            <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight mb-3">
+                                Troféus & Campeões
+                            </h1>
+                            <p className="text-gray-500 text-base md:text-lg max-w-xl">
+                                A história de cada campeonato, os times que venceram e os jogadores que brilharam.
+                            </p>
                         </div>
-                    )}
+
+                        {championships && championships.length > 0 && (
+                            <div className="flex gap-10 md:pb-1">
+                                <div>
+                                    <p className="text-3xl font-black text-[#093a9f]">{championships.length}</p>
+                                    <p className="text-gray-400 text-sm font-medium">Campeonatos</p>
+                                </div>
+                                <div>
+                                    <p className="text-3xl font-black text-[#093a9f]">{totalAwards}</p>
+                                    <p className="text-gray-400 text-sm font-medium">Prêmios Entregues</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -207,11 +206,8 @@ export default async function TrofeusPage() {
                             return (
                                 <div
                                     key={camp.id}
-                                    className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300"
+                                    className="group bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:border-gray-200 transition-all duration-300"
                                 >
-                                    {/* Top bar com número do campeonato */}
-                                    <div className="h-1 bg-gradient-to-r from-[#af1c15] via-yellow-500 to-[#093a9f]" />
-
                                     <div className="p-6 md:p-8">
                                         <div className="flex flex-col md:flex-row gap-6">
 
@@ -229,7 +225,7 @@ export default async function TrofeusPage() {
                                                             <Trophy size={36} className="text-gray-300" />
                                                         )}
                                                     </div>
-                                                    <span className="absolute -top-2 -right-2 bg-gray-900 text-white text-[10px] font-black px-1.5 py-0.5 rounded-md">
+                                                    <span className="absolute -top-2 -right-2 bg-[#093a9f] text-white text-[10px] font-black px-2 py-0.5 rounded-full">
                                                         {year}
                                                     </span>
                                                 </div>
@@ -244,12 +240,17 @@ export default async function TrofeusPage() {
 
                                                     {/* Campeão */}
                                                     {champion && (
-                                                        <div className="mt-3 inline-flex items-center gap-2 bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-1.5 rounded-full">
-                                                            <Trophy size={14} className="text-yellow-600 fill-yellow-500" />
+                                                        <div className="mt-4 inline-flex items-center gap-3 bg-yellow-50 border border-yellow-200 pl-3 pr-4 py-2 rounded-xl">
+                                                            <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center flex-shrink-0">
+                                                                <Trophy size={16} className="text-white fill-white" />
+                                                            </div>
                                                             {champion.logo_url && (
-                                                                <img src={champion.logo_url} alt={champion.name} className="w-5 h-5 object-contain" />
+                                                                <img src={champion.logo_url} alt={champion.name} className="w-8 h-8 object-contain" />
                                                             )}
-                                                            <span className="text-sm font-bold">Campeão: {champion.name}</span>
+                                                            <div className="leading-tight">
+                                                                <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-yellow-600">Campeão</p>
+                                                                <p className="text-base font-black text-gray-900">{champion.name}</p>
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>
